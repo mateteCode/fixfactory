@@ -1,4 +1,4 @@
-### 1. Crear una Máquina y copiar el "_id" recibido
+### Crear una Máquina y copiar el "_id" recibido
 POST http://localhost:3000/api/machines
 Content-Type: application/json
 
@@ -10,7 +10,7 @@ Content-Type: application/json
   "installationDate": "2025-05-10"
 }
 
-### 2. Reportar una Incidencia (RF-03)
+### Reportar una Incidencia (RF-03)
 # Reemplaza el valor de "machine" con el _id que copiaste arriba
 POST http://localhost:3000/api/issues
 Content-Type: application/json
@@ -22,5 +22,24 @@ Content-Type: application/json
   "reportedBy": "Matias Lorenzo"
 }
 
-### 3. Listar todas las incidencias (Verás los datos de la máquina vinculada)
+### Listar todas las incidencias (Verás los datos de la máquina vinculada)
 GET http://localhost:3000/api/issues
+
+### Ver detalle de una incidencia específica
+GET http://localhost:3000/api/issues/69ef415cfca125fb3c9f804a
+
+### Cambiar estado a "En Proceso" (RF-05)
+PUT http://localhost:3000/api/issues/69ef415cfca125fb3c9f804a
+Content-Type: application/json
+
+{
+  "status": "En Proceso"
+}
+
+### Cambiar estado a "Solucionado"
+PUT http://localhost:3000/api/issues/69ef415cfca125fb3c9f804a
+Content-Type: application/json
+
+{
+  "status": "Solucionado"
+}
