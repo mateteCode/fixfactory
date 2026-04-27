@@ -1,0 +1,13 @@
+### Programar Mantenimiento Preventivo (RF-07)
+POST http://localhost:3000/api/preventive
+Content-Type: application/json
+
+{
+  "machine": "69ef2e4114623718dd5fc8be",
+  "taskName": "Cambio de aceite",
+  "frequencyDays": 365,
+  "description": "Utilizar aceite sintético SAE 40"
+}
+
+### Ver calendario preventivo
+GET http://localhost:3000/api/preventive

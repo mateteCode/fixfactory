@@ -2,6 +2,7 @@ import express from "express";
 import cors from "cors";
 import machineRoutes from "./routes/machine.routes.js";
 import issueRoutes from "./routes/issue.routes.js";
+import preventiveRoutes from "./routes/preventive.routes.js";
 
 const app = express();
 
@@ -17,5 +18,6 @@ app.get("/api/test", (req, res) => {
 // Routes
 app.use("/api/machines", machineRoutes);
 app.use("/api/issues", issueRoutes);
+app.use("/api/preventive", preventiveRoutes);
 
 export default app;
