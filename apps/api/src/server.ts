@@ -1,4 +1,4 @@
-import "dotenv/config"; // Carga las variables de entorno [cite: 1112]
+import "dotenv/config";
 import app from "./app.js";
 import { connectDB } from "./config/database.js";
 

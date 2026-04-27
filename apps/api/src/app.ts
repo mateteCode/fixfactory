@@ -8,6 +8,11 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+// RUTA DE DIAGNÓSTICO
+app.get("/test", (req, res) => {
+  res.send("API is working");
+});
+
 // Routes
 app.use("/api/machines", machineRoutes);
 

@@ -1,15 +1,27 @@
 ### Obtener todas las máquinas
 GET http://localhost:3000/api/machines
-Content-Type: application/json
 
-### Crear una nueva máquina (RF-01)
+### Crear una máquina (RF-01) [cite: 1395]
 POST http://localhost:3000/api/machines
 Content-Type: application/json
 
 {
   "code": "INJ-03",
-  "name": "Inyectora 3",
-  "location": "Planta A",
-  "productionLine": "Línea de Inyección",
-  "installationDate": "2024-05-20"
+  "name": "Inyectora de Plástico 3",
+  "location": "Sector A",
+  "productionLine": "Línea 1",
+  "installationDate": "2026-01-15",
+  "technicalManualUrl": "https://storage.fixfactory.com/manuals/inj-03.pdf"
 }
+
+### Actualizar una máquina (reemplazar ID)
+PUT http://localhost:3000/api/machines/69ef2d7414623718dd5fc8bd
+Content-Type: application/json
+
+{
+  "name": "Inyectora de Plástico 3 - Actualizada",
+  "location": "Sector B"
+}
+
+### Eliminar una máquina (reemplazar ID)
+DELETE http://localhost:3000/api/machines/69ef2d7414623718dd5fc8bd
