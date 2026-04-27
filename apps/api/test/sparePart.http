@@ -1,0 +1,19 @@
+### Solicitar Repuesto (El técnico detecta la falta de pieza)
+POST http://localhost:3000/api/spare-parts
+Content-Type: application/json
+
+{
+  "issue": "69ef415cfca125fb3c9f804a",
+  "description": "Rodamiento SKF 6205",
+  "quantity": 2,
+  "requestedBy": "Técnico Juan"
+}
+
+### Compras actualiza el costo y marca como "Comprado" (RF-10)
+PUT http://localhost:3000/api/spare-parts/69efd257e96ff821f05f143f
+Content-Type: application/json
+
+{
+  "estimatedCost": 15000,
+  "status": "Comprado"
+}
