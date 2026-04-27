@@ -1,0 +1,15 @@
+### Obtener todas las máquinas
+GET http://localhost:3000/api/machines
+Content-Type: application/json
+
+### Crear una nueva máquina (RF-01)
+POST http://localhost:3000/api/machines
+Content-Type: application/json
+
+{
+  "code": "INJ-03",
+  "name": "Inyectora 3",
+  "location": "Planta A",
+  "productionLine": "Línea de Inyección",
+  "installationDate": "2024-05-20"
+}

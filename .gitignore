@@ -1,0 +1,25 @@
+cd a# Node dependencies
+# Esto ignora CUALQUIER carpeta node_modules dentro de la raíz o subcarpetas
+node_modules/
+
+# Build outputs
+# Ignora las carpetas de producción de React y de TypeScript
+dist/
+build/
+
+# Environment variables
+# MUY IMPORTANTE: No subir tus claves de MongoDB ni secretos de JWT
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# IDEs and OS files
+.vscode/
+.idea/
+.DS_Store
+*.log
+
+# TypeScript
+tsconfig.tsbuildinfo
