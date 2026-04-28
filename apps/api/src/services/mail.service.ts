@@ -9,20 +9,23 @@ const transporter = nodemailer.createTransport({
   },
 });
 
-export const sendNotification = async (
-  to: string,
-  subject: string,
-  text: string,
-) => {
+/**
+ * Envía una notificación de nueva incidencia (RF-04)
+ */
+export const sendIssueNotification = async (issueDetails: any) => {
+  const { machineName, priority, reportedBy, description } = issueDetails;
+
+  const mailOptions = {
+    from: '"FixFactory Alertas" <noreply@fixfactory.com>',
+    to: process.env.MAINTENANCE_LEAD_EMAIL,
+    subject: `⚠️ NUEVA INCIDENCIA: ${priority} - ${machineName}`,
+    text: `Se ha reportado una nueva falla.\n\nDetalles:\n- Máquina: ${machineName}\n- Reportado por: ${reportedBy}\n- Descripción: ${description}\n\nPor favor, ingrese al sistema para asignar un técnico.`,
+  };
+
   try {
-    await transporter.sendMail({
-      from: '"FixFactory System" <noreply@fixfactory.com>',
-      to,
-      subject,
-      text,
-    });
-    console.log(`Email enviado a ${to}`);
+    await transporter.sendMail(mailOptions);
+    console.log("Notificación enviada con éxito.");
   } catch (error) {
-    console.error("Error enviando email:", error);
+    console.error("Error enviando notificación:", error);
   }
 };

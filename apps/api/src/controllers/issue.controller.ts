@@ -1,4 +1,6 @@
 import type { Request, Response } from "express";
+import { sendIssueNotification } from "../services/mail.service.js";
+import Machine from "../models/Machine.js";
 import Issue from "../models/Issue.js";
 
 // Crear una incidencia (RF-03) [cite: 1398]
@@ -14,7 +16,18 @@ export const createIssue = async (
     console.log(
       `Notification sent to Maintenance Lead: New issue ${savedIssue._id} created.`,
     );
+
     // TODO: sendNotification con MAIL
+    // Buscamos el nombre de la máquina para el cuerpo del mail
+    const machine = await Machine.findById(savedIssue.machine);
+
+    // Disparar notificación asíncrona (RF-04)
+    sendIssueNotification({
+      machineName: machine?.name || "Desconocida",
+      priority: savedIssue.priority,
+      reportedBy: savedIssue.reportedBy,
+      description: savedIssue.description,
+    });
 
     res.status(201).json(savedIssue);
   } catch (error) {
