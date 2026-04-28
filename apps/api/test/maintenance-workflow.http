@@ -1,0 +1,8 @@
+### Cierre Técnico de Incidencia (RF-06) 
+PUT http://localhost:3000/api/issues/69efd9cd3ff40d300129c574/close
+Content-Type: application/json
+
+{
+  "technicalDiagnosis": "Se detectó desgaste excesivo en el rodamiento por falta de lubricación.",
+  "resolutionDetails": "Se procedió al reemplazo del rodamiento y lubricación general de la línea."
+}

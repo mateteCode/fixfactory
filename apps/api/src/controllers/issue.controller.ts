@@ -82,3 +82,33 @@ export const updateIssue = async (
       .json({ message: "Error al actualizar la incidencia", error });
   }
 };
+
+// Finalizar reparación y cerrar incidencia (RF-06)
+export const closeIssue = async (
+  req: Request,
+  res: Response,
+): Promise<void> => {
+  try {
+    const { technicalDiagnosis, resolutionDetails } = req.body;
+
+    const updatedIssue = await Issue.findByIdAndUpdate(
+      req.params.id,
+      {
+        technicalDiagnosis,
+        resolutionDetails,
+        status: "Cerrado", // Estado final del flujo [cite: 1326, 1400]
+        closedAt: new Date(),
+      },
+      { new: true, runValidators: true },
+    );
+
+    if (!updatedIssue) {
+      res.status(404).json({ message: "Incidencia no encontrada" });
+      return;
+    }
+
+    res.status(200).json(updatedIssue);
+  } catch (error) {
+    res.status(400).json({ message: "Error al cerrar la incidencia", error });
+  }
+};

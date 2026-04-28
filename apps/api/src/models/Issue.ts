@@ -15,6 +15,9 @@ export interface IIssue extends Document {
   status: IssueStatus; // Estado del ciclo de vida
   reportedBy: string; // Operario que detectó la falla
   imageUrl?: string; // URL de la foto del problema
+  technicalDiagnosis?: string; // Diagnóstico del técnico
+  resolutionDetails?: string; // Qué se hizo para arreglarlo
+  closedAt?: Date; // Fecha de cierre para métricas MTTR
 }
 
 const issueSchema = new Schema<IIssue>(
@@ -39,6 +42,9 @@ const issueSchema = new Schema<IIssue>(
     },
     reportedBy: { type: String, required: true },
     imageUrl: { type: String },
+    technicalDiagnosis: { type: String },
+    resolutionDetails: { type: String },
+    closedAt: { type: Date },
   },
   {
     timestamps: true, // Para cumplir con la trazabilidad y auditoría (RF-14)
