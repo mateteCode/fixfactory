@@ -4,6 +4,7 @@ import machineRoutes from "./routes/machine.routes.js";
 import issueRoutes from "./routes/issue.routes.js";
 import preventiveRoutes from "./routes/preventive.routes.js";
 import sparePartRoutes from "./routes/sparePart.routes.js";
+import dashboardRoutes from "./routes/dashboard.routes.js";
 
 const app = express();
 
@@ -21,5 +22,6 @@ app.use("/api/machines", machineRoutes);
 app.use("/api/issues", issueRoutes);
 app.use("/api/preventive", preventiveRoutes);
 app.use("/api/spare-parts", sparePartRoutes);
+app.use("/api/dashboard", dashboardRoutes);
 
 export default app;
