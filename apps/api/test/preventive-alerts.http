@@ -1,0 +1,36 @@
+### FIXFACTORY - TEST PREVENTIVE ALERTS (RF-08)
+
+### 1. Crear una tarea que vence MAÑANA (para que el sistema la detecte)
+# @name createUpcomingTask
+POST http://localhost:3000/api/preventive
+Content-Type: application/json
+
+{
+  "machine": "69ef2e4114623718dd5fc8be",
+  "taskName": "Revisión de Cables",
+  "frequencyDays": 2,
+  "lastDate": "2026-04-26", 
+  "description": "Prueba de alerta próxima"
+}
+
+### 2. Crear una tarea ya VENCIDA (para ver si cambia el estado)
+# @name createOverdueTask
+POST http://localhost:3000/api/preventive
+Content-Type: application/json
+
+{
+  "machine": "69ef2e4114623718dd5fc8be",
+  "taskName": "Limpieza de Filtros",
+  "frequencyDays": 30,
+  "lastDate": "2026-03-01",
+  "description": "Prueba de estado Vencido"
+}
+
+### 3. DISPARAR EL CHEQUEO MANUALMENTE
+# Esto simula que dieron las 8:00 AM
+POST http://localhost:3000/api/preventive/test-cron
+
+### 4. VERIFICAR RESULTADOS
+# Revisa la consola del VS Code para ver los logs de "ALERTA PREVENTIVA"
+# Y luego verifica que el estado de la tarea vencida haya cambiado
+GET http://localhost:3000/api/preventive

@@ -1,5 +1,8 @@
 import type { Request, Response } from "express";
 import Machine from "../models/Machine.js";
+import Issue from "../models/Issue.js";
+import PreventiveMaintenance from "../models/PreventiveMaintenance.js";
+import SparePartRequest from "../models/SparePartRequest.js";
 
 // Obtener todas las máquinas
 export const getMachines = async (
@@ -82,5 +85,50 @@ export const deleteMachine = async (
     res.status(200).json({ message: "Máquina eliminada correctamente" });
   } catch (error) {
     res.status(500).json({ message: "Error al eliminar la máquina", error });
+  }
+};
+
+export const getMachineHistory = async (
+  req: Request,
+  res: Response,
+): Promise<void> => {
+  try {
+    const { id } = req.params;
+
+    // Ejecutamos las consultas en paralelo para mejorar el rendimiento
+    const [issues, preventiveTasks, spareParts] = await Promise.all([
+      Issue.find({ machine: id as any }).sort({ createdAt: -1 }),
+      PreventiveMaintenance.find({ machine: id as any }).sort({
+        nextDate: 1,
+      }),
+      // Para los repuestos, buscamos los vinculados a las incidencias de esta máquina
+      SparePartRequest.find().populate({
+        path: "issue",
+        match: { machine: id },
+      }),
+    ]);
+
+    // Filtramos los repuestos que efectivamente pertenecen a esta máquina
+    const filteredSpareParts = spareParts.filter((sp) => sp.issue !== null);
+
+    // Calculamos el costo total acumulado de la máquina (RF-11 parcial)
+    const totalMaintenanceCost = filteredSpareParts.reduce(
+      (acc, curr) => acc + (curr.estimatedCost || 0),
+      0,
+    );
+
+    res.status(200).json({
+      machineId: id,
+      totalMaintenanceCost,
+      history: {
+        issues,
+        preventiveTasks,
+        spareParts: filteredSpareParts,
+      },
+    });
+  } catch (error) {
+    res
+      .status(500)
+      .json({ message: "Error al generar la ficha histórica", error });
   }
 };

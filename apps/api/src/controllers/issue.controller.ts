@@ -14,6 +14,7 @@ export const createIssue = async (
     console.log(
       `Notification sent to Maintenance Lead: New issue ${savedIssue._id} created.`,
     );
+    // TODO: sendNotification con MAIL
 
     res.status(201).json(savedIssue);
   } catch (error) {

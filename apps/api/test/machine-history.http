@@ -1,0 +1,49 @@
+### A. Crear la Máquina de prueba
+# @name createMachine
+POST http://localhost:3000/api/machines
+Content-Type: application/json
+
+{
+  "code": "TEST-01",
+  "name": "Máquina de Pruebas",
+  "location": "Laboratorio",
+  "productionLine": "Línea Test",
+  "installationDate": "2026-01-01"
+}
+
+### B. Crear una Incidencia para esa máquina
+# (Copiá el _id que te devolvió la petición anterior)
+POST http://localhost:3000/api/issues
+Content-Type: application/json
+
+{
+  "machine": "69efd9ad3ff40d300129c573",
+  "description": "Falla detectada para el historial",
+  "priority": "Media",
+  "reportedBy": "Matías Lorenzo"
+}
+
+### C. Crear un pedido de Repuesto para esa Incidencia
+# (Copiá el _id de la INCIDENCIA creada en el paso B)
+POST http://localhost:3000/api/spare-parts
+Content-Type: application/json
+
+{
+  "issue": "69efd9cd3ff40d300129c574",
+  "description": "Sensor de prueba",
+  "quantity": 1,
+  "requestedBy": "Técnico Test"
+}
+
+### D. Cargarle un costo al repuesto (Para verificar el total de la ficha)
+# (Copiá el _id del REPUESTO creado en el paso C)
+PUT http://localhost:3000/api/spare-parts/69efd9dd3ff40d300129c575
+Content-Type: application/json
+
+{
+  "estimatedCost": 5000,
+  "status": "Comprado"
+}
+
+### TEST RF-02: Obtener Ficha Histórica
+GET http://localhost:3000/api/machines/69efd9ad3ff40d300129c573/history
