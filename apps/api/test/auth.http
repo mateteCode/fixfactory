@@ -36,7 +36,19 @@ Content-Type: application/json
   "company": "Empresa Test A"
 }
 
-### 4. LOGIN - Obtener Token de Acceso
+### 4. Registrar un OPERARIO
+POST http://localhost:3000/api/auth/register
+Content-Type: application/json
+
+{
+  "name": "Operario de Máquina",
+  "email": "operario@fixfactory.com",
+  "password": "operariopass123",
+  "role": "OPERARIO",
+  "company": "Empresa Test A"
+}
+
+### 5. LOGIN - Obtener Token de Acceso
 # @name login
 POST http://localhost:3000/api/auth/login
 Content-Type: application/json

@@ -1,0 +1,50 @@
+### FIXFACTORY - SECURITY & MIDDLEWARE TEST
+
+@apiUrl = http://localhost:3000/api
+@adminEmail = admin@fixfactory.com
+@adminPass = adminpassword123
+@operarioEmail = operario@fixfactory.com
+@operarioPass = operariopass123
+
+### 1. ESCENARIO: ACCESO DENEGADO (Sin Token)
+# Debería devolver 401 Unauthorized
+GET {{apiUrl}}/dashboard/stats
+Content-Type: application/json
+
+### 2. ESCENARIO: LOGIN COMO OPERARIO
+# @name loginOperario
+POST {{apiUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "{{operarioEmail}}",
+  "password": "{{operarioPass}}"
+}
+
+### Token de operario recibido
+@tokenOperario = {{loginOperario.response.body.token}}
+
+### 3. ESCENARIO: PROHIBIDO (Rol Insuficiente)
+# El operario tiene token, pero NO tiene permiso para el dashboard.
+# Debería devolver 403 Forbidden
+GET {{apiUrl}}/dashboard/stats
+Authorization: Bearer {{tokenOperario}}
+
+### 4. ESCENARIO: LOGIN COMO ADMIN
+# @name loginAdmin
+POST {{apiUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "{{adminEmail}}",
+  "password": "{{adminPass}}"
+}
+
+### Token de admin recibido
+@tokenAdmin = {{loginAdmin.response.body.token}}
+
+### 5. ESCENARIO: ÉXITO (Token y Rol Correcto)
+# El Admin tiene permiso para ver el dashboard.
+# Debería devolver 200 OK
+GET {{apiUrl}}/dashboard/stats
+Authorization: Bearer {{tokenAdmin}}
