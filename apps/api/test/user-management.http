@@ -1,0 +1,26 @@
+### LOGIN COMO ASISTENTE PARA GESTIONAR PERSONAL
+# @name loginAsistente
+POST http://localhost:3000/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "asistente@empresa.com",
+  "password": "asistentepassword123"
+}
+
+### Token de Asistente
+@token = {{loginAsistente.response.body.token}}
+
+### A. OBTENER LISTA DE USUARIOS ACTIVOS
+GET http://localhost:3000/api/users
+Authorization: Bearer {{token}}
+
+### B. BORRADO LÓGICO (Desactivar Técnico)
+# Reemplazar ID_USER
+PATCH http://localhost:3000/api/users/69f1d0174f470db004721e1d/deactivate
+Authorization: Bearer {{token}}
+
+### C. BORRADO FÍSICO (Eliminar por error de carga)
+# Reemplazar ID_USER
+DELETE http://localhost:3000/api/users/69f1d0174f470db004721e1d
+Authorization: Bearer {{token}}

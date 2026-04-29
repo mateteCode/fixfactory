@@ -17,6 +17,7 @@ export interface IUser extends Document {
   password: string;
   role: UserRole;
   company: string;
+  active: boolean;
 }
 
 const userSchema = new Schema<IUser>(
@@ -30,6 +31,7 @@ const userSchema = new Schema<IUser>(
       default: UserRole.OPERARIO,
     },
     company: { type: String, required: true },
+    active: { type: Boolean, default: true },
   },
   { timestamps: true },
 );

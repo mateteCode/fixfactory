@@ -39,6 +39,12 @@ export const login = async (req: Request, res: Response) => {
       return res.status(401).json({ message: "Credenciales inválidas" });
     }
 
+    if (!user.active) {
+      return res.status(403).json({
+        message: "Tu cuenta está desactivada. Contacta al Asistente de RRHH.",
+      });
+    }
+
     // Generar el Token con el Rol y la Compañía
     const token = jwt.sign(
       { id: user._id, role: user.role, company: user.company },
