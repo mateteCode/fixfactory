@@ -9,7 +9,14 @@ export const createIssue = async (
   res: Response,
 ): Promise<void> => {
   try {
-    const newIssue = new Issue(req.body);
+    const company = (req as any).company;
+    const userId = (req as any).user.id;
+
+    const newIssue = new Issue({
+      ...req.body,
+      company: company, // Inyección automática
+      reportedBy: userId, // Trazabilidad: quién la creó
+    });
     const savedIssue = await newIssue.save();
 
     // Simulación de Notificación Automática (RF-04)
@@ -19,7 +26,7 @@ export const createIssue = async (
 
     // TODO: sendNotification con MAIL
     // Buscamos el nombre de la máquina para el cuerpo del mail
-    const machine = await Machine.findById(savedIssue.machine);
+    const machine = await Machine.findOne({ _id: savedIssue.machine, company });
 
     // Disparar notificación asíncrona (RF-04)
     sendIssueNotification({
@@ -38,7 +45,10 @@ export const createIssue = async (
 // Obtener todas las incidencias (con población de datos de la máquina)
 export const getIssues = async (req: Request, res: Response): Promise<void> => {
   try {
-    const issues = await Issue.find().populate("machine", "name code");
+    const company = (req as any).company;
+
+    // Filtramos por empresa y podemos popular la máquina para ver el nombre
+    const issues = await Issue.find({ company }).populate("machine", "name");
     res.status(200).json(issues);
   } catch (error) {
     res.status(500).json({ message: "Error al recuperar incidencias", error });
@@ -51,7 +61,11 @@ export const getIssueById = async (
   res: Response,
 ): Promise<void> => {
   try {
-    const issue = await Issue.findById(req.params.id).populate("machine");
+    const company = (req as any).company;
+    const issue = await Issue.findById({
+      _id: req.params.id,
+      company,
+    }).populate("machine");
     if (!issue) {
       res.status(404).json({ message: "Incidencia no encontrada" });
       return;
@@ -69,17 +83,18 @@ export const updateIssue = async (
 ): Promise<void> => {
   try {
     const { status, description, priority } = req.body;
+    const company = (req as any).company; // Sacamos la empresa del token
 
-    const updatedIssue = await Issue.findByIdAndUpdate(
-      req.params.id,
+    const updatedIssue = await Issue.findOneAndUpdate(
+      { id: req.params.id, company }, // Filtramos por ID Y por Empresa
       { status, description, priority },
       { new: true, runValidators: true },
     );
 
     if (!updatedIssue) {
-      res
-        .status(404)
-        .json({ message: "Incidencia no encontrada para actualizar" });
+      res.status(404).json({
+        message: "Incidencia no encontrada o no pertenece a tu empresa",
+      });
       return;
     }
 
@@ -102,14 +117,15 @@ export const closeIssue = async (
   res: Response,
 ): Promise<void> => {
   try {
+    const company = (req as any).company;
     const { technicalDiagnosis, resolutionDetails } = req.body;
 
     const updatedIssue = await Issue.findByIdAndUpdate(
-      req.params.id,
+      { _id: req.params.id, company },
       {
         technicalDiagnosis,
         resolutionDetails,
-        status: "Cerrado", // Estado final del flujo [cite: 1326, 1400]
+        status: "Cerrado", // Estado final del flujo
         closedAt: new Date(),
       },
       { new: true, runValidators: true },

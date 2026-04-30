@@ -18,6 +18,7 @@ export interface IIssue extends Document {
   technicalDiagnosis?: string; // Diagnóstico del técnico
   resolutionDetails?: string; // Qué se hizo para arreglarlo
   closedAt?: Date; // Fecha de cierre para métricas MTTR
+  company: string;
 }
 
 const issueSchema = new Schema<IIssue>(
@@ -45,6 +46,7 @@ const issueSchema = new Schema<IIssue>(
     technicalDiagnosis: { type: String },
     resolutionDetails: { type: String },
     closedAt: { type: Date },
+    company: { type: String, required: true, index: true },
   },
   {
     timestamps: true, // Para cumplir con la trazabilidad y auditoría (RF-14)

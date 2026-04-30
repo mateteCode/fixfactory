@@ -1,0 +1,74 @@
+### 1. Registrar un ADMIN de la empresa Alpha
+POST http://localhost:3000/api/auth/register
+Content-Type: application/json
+
+{
+  "name": "Admin de empresa Alpha",
+  "email": "admin@alpha.com",
+  "password": "adminpassword123",
+  "role": "ADMIN",
+  "company": "Alpha"
+}
+
+
+### 2. Registrar un ADMIN de la empresa Beta
+POST http://localhost:3000/api/auth/register
+Content-Type: application/json
+
+{
+  "name": "Admin de empresa Beta",
+  "email": "admin@beta.com",
+  "password": "adminpassword123",
+  "role": "ADMIN",
+  "company": "Beta"
+}
+
+
+### 3. LOGIN - Obtener Token de Acceso de ADMIN Alpha
+# @name login
+POST http://localhost:3000/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "admin@alpha.com",
+  "password": "adminpassword123"
+}
+
+### VARIABLE PARA SIGUIENTES PRUEBAS
+@authToken = {{login.response.body.token}}
+
+### 4. Crear una máquina para empresa Alpha
+POST http://localhost:3000/api/machines
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "code": "INJ-09",
+  "name": "Inyectora de Plástico 9",
+  "location": "Sector A",
+  "productionLine": "Línea 1",
+  "installationDate": "2026-01-15",
+  "technicalManualUrl": "https://storage.alpha.com/manuals/inj-09.pdf"
+}
+
+### 5. Obtener todas las máquinas de la empresa Alpha
+GET http://localhost:3000/api/machines
+Authorization: Bearer {{authToken}}
+
+
+### 6. LOGIN - Obtener Token de Acceso de ADMIN Beta
+# @name login
+POST http://localhost:3000/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "admin@beta.com",
+  "password": "adminpassword123"
+}
+
+### VARIABLE PARA SIGUIENTES PRUEBAS
+@authToken = {{login.response.body.token}}
+
+### 7. Intentar obbtener todas las máquinas de la empresa Alpha (Vacio)
+GET http://localhost:3000/api/machines
+Authorization: Bearer {{authToken}}

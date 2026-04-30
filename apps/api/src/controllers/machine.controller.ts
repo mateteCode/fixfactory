@@ -10,7 +10,7 @@ export const getMachines = async (
   res: Response,
 ): Promise<void> => {
   try {
-    const machines = await Machine.find();
+    const machines = await Machine.find({ company: (req as any).company });
     res.status(200).json(machines);
   } catch (error) {
     res.status(500).json({ message: "Error al recuperar las máquinas", error });
@@ -40,7 +40,13 @@ export const createMachine = async (
   res: Response,
 ): Promise<void> => {
   try {
-    const newMachine = new Machine(req.body);
+    //const newMachine = new Machine(req.body);
+    // Forzamos que la máquina pertenezca a la empresa del usuario logueado
+    // Ignoramos si el usuario intenta enviar otra "company" en el body
+    const newMachine = new Machine({
+      ...req.body,
+      company: (req as any).company,
+    });
     const savedMachine = await newMachine.save();
     res.status(201).json(savedMachine);
   } catch (error) {

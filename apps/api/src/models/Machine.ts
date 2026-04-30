@@ -8,6 +8,7 @@ export interface IMachine extends Document {
   productionLine: string;
   installationDate: Date;
   technicalManualUrl?: string;
+  company: string;
 }
 
 // Esquema de MongoDB siguiendo el requerimiento RF-01
@@ -19,6 +20,7 @@ const machineSchema = new Schema<IMachine>(
     productionLine: { type: String, required: true },
     installationDate: { type: Date, required: true },
     technicalManualUrl: { type: String },
+    company: { type: String, required: true, index: true },
   },
   {
     timestamps: true,
