@@ -1,0 +1,57 @@
+@apiUrl = http://localhost:3000/api
+
+# ADMIN
+#@email = matias@motoresarg.com
+#@password = password123
+
+# MANTENIMIENTO
+#@email = 
+#@password = 
+
+# OPERARIO
+#@email = juan@motoresarg.com
+#@password = operariopassword
+
+# ADMIN DE OTRA EMPRESA
+@email = juanchispita@fosforos.com
+@password = password123
+
+### 0. LOGIN PARA OBTENER EL TOKEN
+# @name login
+POST {{apiUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "{{email}}",
+  "password": "{{password}}"
+}
+
+###
+@token = {{login.response.body.token}}
+
+### Programar Mantenimiento Preventivo (RF-07).
+### ROLES PERMITIDOS: ADMIN, MANTENIMIENTO
+
+POST {{apiUrl}}/preventive
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "machine": "69f4629d69c610fda7b50fda",
+  "taskName": "Cambio de filtro",
+  "frequencyDays": 3,
+  "description": "Utilizar filtro C96"
+}
+
+### Ver calendario preventivo
+GET {{apiUrl}}/preventive
+Authorization: Bearer {{token}}
+
+
+### CHEQUEO MANUAL DE LAS TAREAS PREVENTIVAS
+POST {{apiUrl}}/preventive/test-cron
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+}

@@ -1,0 +1,87 @@
+### Variables
+@apiUrl = http://localhost:3000/api
+@emailAdmin = juanchispita@fosforos.com
+@passwordAdmin = password123
+
+
+### 1B. LOGIN DEL ADMIN (Para obtener el Token)
+# @name loginAdmin
+POST {{apiUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "{{emailAdmin}}",
+  "password": "{{passwordAdmin}}"
+}
+
+###
+@tokenAdmin = {{loginAdmin.response.body.token}}
+
+### 1C. CREAR UNA MÁQUINA
+POST {{apiUrl}}/machines
+Authorization: Bearer {{tokenAdmin}}
+Content-Type: application/json
+
+{
+  "code": "CNC-001",
+  "name": "Fresadora CNC Vertical",
+  "location": "Planta 1 - Sector A",
+  "productionLine": "Línea de Mecanizado",
+  "installationDate": "2025-10-15T00:00:00Z"
+}
+
+### 2. OBTENER TODAS LAS MÁQUINAS (Debe traer solo las de tu empresa)
+GET {{apiUrl}}/machines
+Authorization: Bearer {{tokenAdmin}}
+
+### 3. ACTUALIZAR MÁQUINA
+# Reemplaza ID_MAQUINA por el _id que devolvió el listado de máquinas
+PATCH {{apiUrl}}/machines/69f4634f69c610fda7b50fdf
+Authorization: Bearer {{tokenAdmin}}
+Content-Type: application/json
+
+{
+  "location": "Planta 1 - Sector B (Movida)"
+}
+
+### 4. ELIMINAR MÁQUINA
+DELETE {{apiUrl}}/machines/69f461d869c610fda7b50fd9
+Authorization: Bearer {{tokenAdmin}}
+
+
+### 5A. REGISTRO MAESTRO (Crear Empresa Fantasma + Admin Owner)
+# @name registerMaster
+POST {{apiUrl}}/auth/register-company
+Content-Type: application/json
+
+{
+  "companyName": "Empresa FAntasma",
+  "adminName": "Gaspar Blanco",
+  "email": "admin@fantasma.com",
+  "password": "password123"
+}
+
+
+### 5B. LOGIN DEL ADMIN (Para obtener el Token)
+# @name loginAdminFantasma
+POST {{apiUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "admin@fantasma.com",
+  "password": "password123"
+}
+
+###
+@tokenAdminFantasma = {{loginAdminFantasma.response.body.token}}
+
+
+### 5C. PRUEBA DE SEGURIDAD (Multi-tenancy)
+# Intenta obtener una máquina con el token de un usuario de OTRA empresa.
+# Debería devolver 404 o estar vacía la lista.
+GET {{apiUrl}}/machines
+Authorization: Bearer {{tokenAdminFantasma}}
+
+### 5D. ELIMINAR MÁQUINA DE OTRA EMPRESA
+DELETE {{apiUrl}}/machines/69f4634f69c610fda7b50fdf
+Authorization: Bearer {{tokenAdminFantasma}}

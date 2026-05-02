@@ -1,0 +1,72 @@
+@apiUrl = http://localhost:3000/api
+
+# ADMIN
+#@email = juanchispita@fosforos.com
+#@password = password123
+
+# GERENTE
+#@email = gerente@empresa.com
+#@password = gerentepassword123
+
+# MAQUINA DE LA EMPRESA
+@machineId = ID_DE_TU_MAQUINA
+
+# INCIDENCIA DE LA EMPRESA
+@issueId = 69f465a469c610fda7b50fe1
+
+# SOLICITUD DE REPUESTO DE LA EMPRESA
+@sparePartId = 69f5aa8e1e6b5253d944df9c
+
+
+
+# ADMIN DE OTRA EMPRESA
+@email = admin@fantasma.com
+@password = password123
+
+# MAQUINA DE OTRA EMPRESA
+#@machineId = ID_DE_TU_MAQUINA
+
+# INCIDENCIA DE OTRA EMPRESA
+#@issueId = ID_DE_TU_INCIDENCIA
+
+### 0. LOGIN PARA OBTENER EL TOKEN
+# @name login
+POST {{apiUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "{{email}}",
+  "password": "{{password}}"
+}
+
+###
+@token = {{login.response.body.token}}
+
+
+### SOLICITAR REPUESTO (El técnico detecta la falta de pieza)
+### ROLES PERMITIDOS: ADMIN, TÉCNICO
+
+POST {{apiUrl}}/spare-parts
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "issue": "{{issueId}}",
+  "description": "Rodamiento SKF 6205",
+  "quantity": 2
+}
+
+### Compras actualiza el costo y marca como "Comprado" (RF-10)
+PATCH {{apiUrl}}/spare-parts/{{sparePartId}}
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "estimatedCost": 15000,
+  "status": "Comprado"
+}
+
+
+### LISTAR TODOS LOS PEDIDOS DE REPUESTOS DE LA EMPRESA
+GET {{apiUrl}}/spare-parts
+Authorization: Bearer {{token}}

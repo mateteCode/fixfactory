@@ -8,6 +8,7 @@ export interface IPreventiveMaintenance extends Document {
   nextDate: Date; // Fecha programada para la próxima vez
   description?: string;
   status: "Programado" | "Vencido" | "Realizado";
+  company: Types.ObjectId;
 }
 
 const preventiveSchema = new Schema<IPreventiveMaintenance>(
@@ -22,6 +23,12 @@ const preventiveSchema = new Schema<IPreventiveMaintenance>(
       type: String,
       enum: ["Programado", "Vencido", "Realizado"],
       default: "Programado",
+    },
+    company: {
+      type: Schema.Types.ObjectId,
+      ref: "Company",
+      required: true,
+      index: true,
     },
   },
   {

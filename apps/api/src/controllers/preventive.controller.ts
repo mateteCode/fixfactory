@@ -7,8 +7,10 @@ export const createPreventiveTask = async (
   res: Response,
 ): Promise<void> => {
   try {
-    const { machine, taskName, frequencyDays, lastDate, description } =
-      req.body;
+    const companyId = (req as any).companyId;
+    const { machine: machineId, frequencyDays, lastDate } = req.body;
+    //const { machine, taskName, frequencyDays, lastDate, description } =
+    req.body;
 
     // Cálculo automático de la próxima fecha
     const baseDate = lastDate ? new Date(lastDate) : new Date();
@@ -16,12 +18,10 @@ export const createPreventiveTask = async (
     nextDate.setDate(nextDate.getDate() + frequencyDays);
 
     const newTask = new PreventiveMaintenance({
-      machine,
-      taskName,
-      frequencyDays,
+      ...req.body,
       lastDate: baseDate,
       nextDate,
-      description,
+      company: companyId,
     });
 
     const savedTask = await newTask.save();
@@ -39,10 +39,12 @@ export const getPreventiveTasks = async (
   res: Response,
 ): Promise<void> => {
   try {
-    const tasks = await PreventiveMaintenance.find().populate(
-      "machine",
-      "name code",
-    );
+    const companyId = (req as any).companyId;
+    const tasks = await PreventiveMaintenance.find({
+      company: companyId,
+    })
+      .populate("machine", "name code")
+      .sort({ nextDate: 1 });
     res.status(200).json(tasks);
   } catch (error) {
     res.status(500).json({ message: "Error al obtener calendario", error });

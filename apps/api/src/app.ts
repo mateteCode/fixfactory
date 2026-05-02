@@ -7,6 +7,7 @@ import sparePartRoutes from "./routes/sparePart.routes.js";
 import dashboardRoutes from "./routes/dashboard.routes.js";
 import authRoutes from "./routes/auth.routes.js";
 import userRoutes from "./routes/user.routes.js";
+import companyRoutes from "./routes/company.routes.js";
 
 const app = express();
 
@@ -27,5 +28,6 @@ app.use("/api/issues", issueRoutes);
 app.use("/api/preventive", preventiveRoutes);
 app.use("/api/spare-parts", sparePartRoutes);
 app.use("/api/dashboard", dashboardRoutes);
+app.use("/api/company", companyRoutes);
 
 export default app;

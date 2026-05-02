@@ -1,4 +1,4 @@
-import { Schema, model, Document } from "mongoose";
+import { Schema, model, Document, Types } from "mongoose";
 
 // Interfaz para definir la estructura de la Máquina en el código
 export interface IMachine extends Document {
@@ -8,19 +8,24 @@ export interface IMachine extends Document {
   productionLine: string;
   installationDate: Date;
   technicalManualUrl?: string;
-  company: string;
+  company: Types.ObjectId;
 }
 
 // Esquema de MongoDB siguiendo el requerimiento RF-01
 const machineSchema = new Schema<IMachine>(
   {
-    code: { type: String, required: true, unique: true },
+    code: { type: String, required: true, unique: true }, //TODO: Hacer que la el codigo sea único solo para la empresa
     name: { type: String, required: true },
     location: { type: String, required: true },
     productionLine: { type: String, required: true },
     installationDate: { type: Date, required: true },
     technicalManualUrl: { type: String },
-    company: { type: String, required: true, index: true },
+    company: {
+      type: Schema.Types.ObjectId,
+      ref: "Company",
+      required: true,
+      index: true,
+    },
   },
   {
     timestamps: true,

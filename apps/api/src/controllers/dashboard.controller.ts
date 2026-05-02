@@ -8,15 +8,19 @@ export const getGeneralStats = async (
   res: Response,
 ): Promise<void> => {
   try {
+    const companyId = (req as any).companyId;
+
     // 1. Contadores básicos
-    const totalMachines = await Machine.countDocuments();
+    const totalMachines = await Machine.countDocuments({ company: companyId });
     const activeIssues = await Issue.countDocuments({
+      company: companyId,
       status: { $ne: "Cerrado" },
     });
 
     // 2. Cálculo de MTTR (Tiempo promedio de reparación en horas)
     // Solo para incidencias cerradas que tengan fecha de creación y cierre
     const closedIssues = await Issue.find({
+      company: companyId,
       status: "Cerrado",
       closedAt: { $exists: true },
     });
@@ -36,7 +40,10 @@ export const getGeneralStats = async (
         : 0;
 
     // 3. Costo Total en Repuestos (RF-10)
-    const spareParts = await SparePartRequest.find({ status: "Comprado" });
+    const spareParts = await SparePartRequest.find({
+      company: companyId,
+      status: "Comprado",
+    });
     const totalSpent = spareParts.reduce(
       (acc, curr) => acc + (curr.estimatedCost || 0),
       0,
@@ -49,7 +56,7 @@ export const getGeneralStats = async (
         totalSpent,
         mttrHours: Number(mttrHours),
       },
-      criticalMachines: await getCriticalMachines(),
+      criticalMachines: await getCriticalMachines(companyId),
     });
   } catch (error) {
     res.status(500).json({ message: "Error al generar estadísticas", error });
@@ -57,9 +64,14 @@ export const getGeneralStats = async (
 };
 
 // Función auxiliar para identificar máquinas con más fallas
-async function getCriticalMachines() {
+async function getCriticalMachines(companyId: any) {
   return await Issue.aggregate([
-    { $match: { status: { $ne: "Cerrado" } } },
+    {
+      $match: {
+        company: companyId,
+        status: { $ne: "Cerrado" },
+      },
+    },
     { $group: { _id: "$machine", count: { $sum: 1 } } },
     { $sort: { count: -1 } },
     { $limit: 5 },

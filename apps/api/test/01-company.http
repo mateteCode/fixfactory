@@ -1,0 +1,94 @@
+### Variables Globales
+@apiUrl = http://localhost:3000/api
+@companyName = Fábrica Argentina de Motores
+@adminName = Matías Lorenzo
+@emailAdmin = matias@motoresarg.com
+@passwordAdmin = password123
+@taxId = 20-30456789-2
+@address = Av. General Paz 1234, CABA
+@newName = Motores Argentinos S.A
+@operarioName = Operario Juan
+@operarioEmail = juan@motoresarg.com
+@operarioPassword = operariopassword
+
+### 1. REGISTRO MAESTRO (Crear Empresa + Admin Owner)
+# @name registerMaster
+POST {{apiUrl}}/auth/register-company
+Content-Type: application/json
+
+{
+  "companyName": "{{companyName}}",
+  "adminName": "{{adminName}}",
+  "email": "{{emailAdmin}}",
+  "password": "{{passwordAdmin}}"
+}
+
+
+### 2. LOGIN DEL ADMIN (Para obtener el Token)
+# @name loginAdmin
+POST {{apiUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "{{emailAdmin}}",
+  "password": "{{passwordAdmin}}"
+}
+
+###
+@tokenAdmin = {{loginAdmin.response.body.token}}
+
+
+### 3. OBTENER PERFIL DE LA EMPRESA
+# Verifica que el middleware 'isCompanyOwner' permita el acceso
+GET {{apiUrl}}/company/profile
+Authorization: Bearer {{tokenAdmin}}
+
+
+### 4. ACTUALIZAR DATOS DE LA EMPRESA
+# Cambiamos dirección y taxId (CUIT)
+PATCH {{apiUrl}}/company/update
+Authorization: Bearer {{tokenAdmin}}
+Content-Type: application/json
+
+{
+  "taxId": "{{taxId}}",
+  "address": "{{address}}",
+  "name": "{{newName}}"
+}
+
+### 5a. REGISTRAR UN OPERARIO (Como el ADMIN de la empresa)
+# @name registerOperario
+POST {{apiUrl}}/auth/register
+Authorization: Bearer {{tokenAdmin}}
+Content-Type: application/json
+
+{
+  "name": "{{operarioName}}",
+  "email": "{{operarioEmail}}",
+  "password": "{{operarioPassword}}",
+  "role": "OPERARIO"  
+}
+
+### 5b. LOGIN DEL OPERARIO
+# @name loginOperario
+POST {{apiUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "{{operarioEmail}}",
+  "password": "{{operarioPassword}}"
+}
+
+###
+@tokenOperario = {{loginOperario.response.body.token}}
+
+
+### 5c. INTENTO DE ACCESO AL PERFIL (Debe fallar con 403)
+# El Operario pertenece a la empresa, pero NO es el Owner.
+GET {{apiUrl}}/company/profile
+Authorization: Bearer {{tokenOperario}}
+
+### 6. DESACTIVAR EMPRESA (Borrado Lógico)
+# Esto marca 'active: false'. Útil para bajas de suscripción.
+PATCH {{apiUrl}}/company/deactivate
+Authorization: Bearer {{tokenAdmin}}

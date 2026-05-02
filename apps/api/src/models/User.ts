@@ -30,21 +30,10 @@ const userSchema = new Schema<IUser>(
       enum: Object.values(UserRole),
       default: UserRole.OPERARIO,
     },
-    //company: { type: String, required: true },
     company: { type: Schema.Types.ObjectId, ref: "Company", required: true },
     active: { type: Boolean, default: true },
   },
   { timestamps: true },
 );
-
-// Hash de password
-/*
-userSchema.pre("save", async function (next) {
-  if (!this.isModified("password")) return next();
-  const salt = await bcrypt.genSalt(10);
-  this.password = await bcrypt.hash(this.password, 10);
-  return next();
-});
-*/
 
 export default model<IUser>("User", userSchema);

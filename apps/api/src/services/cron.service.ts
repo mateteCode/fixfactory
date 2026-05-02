@@ -52,7 +52,7 @@ export const runMaintenanceCheck = async () => {
     const upcomingTasks = await PreventiveMaintenance.find({
       nextDate: { $lte: warningLimit },
       status: "Programado",
-    }).populate("machine");
+    }).populate("machine company");
 
     if (upcomingTasks.length === 0) {
       console.log("No hay tareas próximas a vencer.");
@@ -67,8 +67,9 @@ export const runMaintenanceCheck = async () => {
         await task.save();
       } else {
         // Si está en el rango de los 7 días pero aún no venció
+        const companyName = (task.company as any).name;
         console.log(
-          `[ALERTA]: ${task.taskName} vence pronto (${task.nextDate.toLocaleDateString()})`,
+          `[ALERTA - ${companyName}]: ${task.taskName} vence pronto (${task.nextDate.toLocaleDateString()})`,
         );
 
         // Aquí es donde llamarías a sendNotification(...) en el futuro (RF-04)

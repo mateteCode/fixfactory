@@ -4,13 +4,14 @@ import Issue from "../models/Issue.js";
 import PreventiveMaintenance from "../models/PreventiveMaintenance.js";
 import SparePartRequest from "../models/SparePartRequest.js";
 
-// Obtener todas las máquinas
+// Obtener todas las máquinas de la empresa que pertenece el usuario
 export const getMachines = async (
   req: Request,
   res: Response,
 ): Promise<void> => {
   try {
-    const machines = await Machine.find({ company: (req as any).company });
+    const companyId = (req as any).companyId;
+    const machines = await Machine.find({ company: companyId });
     res.status(200).json(machines);
   } catch (error) {
     res.status(500).json({ message: "Error al recuperar las máquinas", error });
@@ -23,9 +24,15 @@ export const getMachineById = async (
   res: Response,
 ): Promise<void> => {
   try {
-    const machine = await Machine.findById(req.params.id);
+    const companyId = (req as any).companyId as string;
+    const machine = await Machine.findOne({
+      _id: req.params.id as string,
+      company: companyId,
+    });
     if (!machine) {
-      res.status(404).json({ message: "Máquina no encontrada" });
+      res
+        .status(404)
+        .json({ message: "Máquina no encontrada o acceso denegado" });
       return;
     }
     res.status(200).json(machine);
@@ -40,14 +47,24 @@ export const createMachine = async (
   res: Response,
 ): Promise<void> => {
   try {
-    //const newMachine = new Machine(req.body);
-    // Forzamos que la máquina pertenezca a la empresa del usuario logueado
-    // Ignoramos si el usuario intenta enviar otra "company" en el body
+    const companyId = (req as any).companyId;
+    const { code } = req.body;
+
+    // Verificar si ya existe una máquina con ese código
+    const existingMachine = await Machine.findOne({ code });
+
+    if (existingMachine) {
+      res.status(400).json({
+        message: `Ya existe una máquina registrada con el código: ${code}`,
+      });
+      return;
+    }
     const newMachine = new Machine({
       ...req.body,
-      company: (req as any).company,
+      company: companyId,
     });
     const savedMachine = await newMachine.save();
+
     res.status(201).json(savedMachine);
   } catch (error) {
     res.status(400).json({ message: "Error al crear la máquina", error });
@@ -60,15 +77,16 @@ export const updateMachine = async (
   res: Response,
 ): Promise<void> => {
   try {
-    const updatedMachine = await Machine.findByIdAndUpdate(
-      req.params.id,
+    const companyId = (req as any).companyId;
+    const updatedMachine = await Machine.findOneAndUpdate(
+      { _id: req.params.id as string, company: companyId },
       req.body,
       { new: true, runValidators: true },
     );
     if (!updatedMachine) {
       res
         .status(404)
-        .json({ message: "Máquina no encontrada para actualizar" });
+        .json({ message: "Máquina no encontrada o acceso denegado" });
       return;
     }
     res.status(200).json(updatedMachine);
@@ -83,9 +101,15 @@ export const deleteMachine = async (
   res: Response,
 ): Promise<void> => {
   try {
-    const deletedMachine = await Machine.findByIdAndDelete(req.params.id);
+    const companyId = (req as any).companyId;
+    const deletedMachine = await Machine.findOneAndDelete({
+      _id: req.params.id as string,
+      company: companyId as string,
+    });
     if (!deletedMachine) {
-      res.status(404).json({ message: "Máquina no encontrada para eliminar" });
+      res.status(404).json({
+        message: "Máquina no encontrada o no tienes permisos para eliminarla",
+      });
       return;
     }
     res.status(200).json({ message: "Máquina eliminada correctamente" });
