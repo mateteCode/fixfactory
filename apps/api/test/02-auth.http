@@ -1,0 +1,123 @@
+### FIXFACTORY - AUTHENTICATION & ROLES TEST
+
+### Variables Globales
+@apiUrl = http://localhost:3000/api
+@emailAdmin = juanchispita@fosforos.com
+@passwordAdmin = password123
+
+
+### 1A. REGISTRO MAESTRO (Crear Empresa + Admin Owner)
+# @name registerMaster
+POST {{apiUrl}}/auth/register-company
+Content-Type: application/json
+
+{
+  "companyName": "Fábrica Argentina de Fósforos",
+  "adminName": "Juan Chispita",
+  "email": "{{emailAdmin}}",
+  "password": "{{passwordAdmin}}"
+}
+
+
+### 1B. LOGIN DEL ADMIN (Para obtener el Token)
+# @name loginAdmin
+POST {{apiUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "{{emailAdmin}}",
+  "password": "{{passwordAdmin}}"
+}
+
+###
+@tokenAdmin = {{loginAdmin.response.body.token}}
+
+### 2. Registrar un GERENTE (Visión de Negocio)
+POST {{apiUrl}}/auth/register
+Authorization: Bearer {{tokenAdmin}}
+Content-Type: application/json
+
+{
+  "name": "Gerente Comercial",
+  "email": "gerente@empresa.com",
+  "password": "gerentepassword123",
+  "role": "GERENTE"
+}
+
+
+### 3A. Registrar un ASISTENTE (Gestión de Personal)
+POST {{apiUrl}}/auth/register
+Authorization: Bearer {{tokenAdmin}}
+Content-Type: application/json
+
+{
+  "name": "RRHH Asistente",
+  "email": "asistente@empresa.com",
+  "password": "asistentepassword123",
+  "role": "ASISTENTE"
+}
+
+
+### 3B. LOGIN DEL ASISTENTE(Para obtener el Token)
+# @name loginAsistente
+POST {{apiUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "asistente@empresa.com",
+  "password": "asistentepassword123"
+}
+
+###
+@tokenAsistente = {{loginAsistente.response.body.token}}
+
+### 4. Registrar un OPERARIO
+POST {{apiUrl}}/auth/register
+Authorization: Bearer {{tokenAsistente}}
+Content-Type: application/json
+
+{
+  "name": "Operario de Máquina",
+  "email": "operario@fixfactory.com",
+  "password": "operariopass123",
+  "role": "OPERARIO"
+}
+
+
+### 5. Registrar un TÉCNICO
+POST {{apiUrl}}/auth/register
+Authorization: Bearer {{tokenAsistente}}
+Content-Type: application/json
+
+{
+  "name": "Técnico reparador",
+  "email": "tecnico@fixfactory.com",
+  "password": "tecnicoopass123",
+  "role": "TECNICO"
+}
+
+
+### 5B. LOGIN DEL TÉCNICO (Para obtener el Token)
+# @name loginTecnico
+POST {{apiUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "tecnico@fixfactory.com",
+  "password": "tecnicoopass123"
+}
+
+###
+@tokenTecnico= {{loginTecnico.response.body.token}}
+
+### 6. Registrar otro TÉCNICO (Error. Un técnico no puede registrar usuarios)
+POST {{apiUrl}}/auth/register
+Authorization: Bearer {{tokenTecnico}}
+Content-Type: application/json
+
+{
+  "name": "Técnico reparador 2",
+  "email": "tecnico2@fixfactory.com",
+  "password": "tecnicoopass123",
+  "role": "TECNICO"
+}

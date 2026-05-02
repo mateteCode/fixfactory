@@ -10,6 +10,9 @@ import { authenticate } from "../middlewares/auth.middleware.js";
 import { authorize } from "../middlewares/role.middleware.js";
 import { checkTenant } from "../middlewares/tenant.middleware.js";
 import { UserRole } from "../models/User.js";
+import Machine from "../models/Machine.js";
+import Issue from "../models/Issue.js";
+import { validateOwnership } from "../middlewares/ownership.middleware.js";
 
 const router = Router();
 
@@ -24,6 +27,7 @@ router.get("/:id", getIssueById);
 router.post(
   "/",
   authorize([UserRole.OPERARIO, UserRole.ADMIN, UserRole.MANTENIMIENTO]),
+  validateOwnership(Machine, "machine", "body"),
   createIssue,
 );
 // Solo el técnico o mantenimiento pueden cambiar estados técnicos
@@ -35,6 +39,7 @@ router.patch(
 router.patch(
   "/:id/close",
   authorize([UserRole.TECNICO, UserRole.MANTENIMIENTO, UserRole.ADMIN]),
+  validateOwnership(Issue, "id", "params"),
   closeIssue,
 );
 

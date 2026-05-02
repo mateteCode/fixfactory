@@ -1,0 +1,126 @@
+### Variables Globales
+@apiUrl = http://localhost:3000/api
+@emailAdmin = juanchispita@fosforos.com
+@passwordAdmin = password123
+
+
+### 0B. LOGIN DEL ADMIN (Para obtener el Token)
+# @name loginAdmin
+POST {{apiUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "{{emailAdmin}}",
+  "password": "{{passwordAdmin}}"
+}
+
+###
+@tokenAdmin = {{loginAdmin.response.body.token}}
+
+
+
+### 0D. Registrar un OPERARIO
+POST {{apiUrl}}/auth/register
+Authorization: Bearer {{tokenAdmin}}
+Content-Type: application/json
+
+{
+  "name": "Operario de Máquina",
+  "email": "operario@fosforos.com",
+  "password": "operariopass123",
+  "role": "OPERARIO"
+}
+
+
+### 0B. LOGIN DEL OPERARIO (Para obtener el Token)
+# @name loginOperario
+POST {{apiUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "operario@fosforos.com",
+  "password": "operariopass123"
+}
+
+###
+@tokenOperario = {{loginOperario.response.body.token}}
+
+### 2. OBTENER TODAS LAS MÁQUINAS (Debe traer solo las de tu empresa)
+GET {{apiUrl}}/machines
+Authorization: Bearer {{tokenAdmin}}
+
+@machineId = 69f4634f69c610fda7b50fdf
+### 1. REPORTAR NUEVA INCIDENCIA (Operario)
+# @name createIssue
+POST {{apiUrl}}/issues
+Authorization: Bearer {{tokenOperario}}
+Content-Type: application/json
+
+{
+  "machine": "{{machineId}}",
+  "description": "Fuga de aceite en el pistón principal, se observa goteo constante.",
+  "priority": "Alta"
+}
+
+###
+@issueId = {{createIssue.response.body._id}}
+
+### 2. OBTENER TODAS LAS INCIDENCIAS (Filtro por empresa automático)
+# Debe traer la incidencia recién creada
+GET {{apiUrl}}/issues
+Authorization: Bearer {{tokenOperario}}
+
+### 3. VER DETALLE DE UNA INCIDENCIA ESPECÍFICA
+GET {{apiUrl}}/issues/{{issueId}}
+Authorization: Bearer {{tokenAdmin}}
+
+### 4. ACTUALIZAR ESTADO A "EN PROCESO" (Técnico/Admin)
+# Solo roles autorizados pueden hacer este PATCH
+PATCH {{apiUrl}}/issues/{{issueId}}
+Authorization: Bearer {{tokenAdmin}}
+Content-Type: application/json
+
+{
+  "status": "En Proceso",
+  "description": "Se inicia revisión de sellos y válvulas."
+}
+
+### 5. REGISTRAR DIAGNÓSTICO Y CERRAR INCIDENCIA
+# Flujo final técnico (RF-06)
+PATCH {{apiUrl}}/issues/{{issueId}}/close
+Authorization: Bearer {{tokenAdmin}}
+Content-Type: application/json
+
+{
+  "technicalDiagnosis": "Sello E-45 desgastado por falta de lubricación.",
+  "resolutionDetails": "Se reemplazó el sello y se purgó el sistema hidráulico."
+}
+
+
+### PRUEBAS DE SEGURIDAD (Tenant Isolation)
+
+### 6. INTENTO DE REPORTE SIN TOKEN
+# Debe devolver 401 Unauthorized[cite: 13]
+POST {{apiUrl}}/issues
+Content-Type: application/json
+
+{
+  "machine": "{{machineId}}",
+  "description": "Intento malicioso"
+}
+
+### 7. INTENTO DE VER INCIDENCIA DE OTRA EMPRESA
+# Reemplaza con un ID de una incidencia que NO pertenezca a tu token.
+# Debe devolver 404 Not Found (por el filtro findOne({_id, company}))
+GET {{apiUrl}}/issues/69f40cff17a5d6e4122fc6f8
+Authorization: Bearer {{tokenAdmin}}
+
+### 8. INTENTO DE CIERRE POR UN OPERARIO
+# El rol OPERARIO no tiene permiso para cerrar incidencias (RF-05)[cite: 25]
+PATCH {{apiUrl}}/issues/{{issueId}}/close
+Authorization: Bearer {{tokenOperario}}
+Content-Type: application/json
+
+{
+  "technicalDiagnosis": "No debería poder hacer esto"
+}

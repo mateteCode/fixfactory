@@ -4,10 +4,22 @@ import {
   getPreventiveTasks,
 } from "../controllers/preventive.controller.js";
 import { runMaintenanceCheck } from "../services/cron.service.js";
+import Machine from "../models/Machine.js";
+import { validateOwnership } from "../middlewares/ownership.middleware.js";
+import { authenticate } from "../middlewares/auth.middleware.js";
+import { checkTenant } from "../middlewares/tenant.middleware.js";
+import { authorize } from "../middlewares/role.middleware.js";
+import { UserRole } from "../models/User.js";
 
 const router = Router();
+router.use(authenticate, checkTenant);
 
-router.post("/", createPreventiveTask);
+router.post(
+  "/",
+  authorize([UserRole.ADMIN, UserRole.MANTENIMIENTO]),
+  validateOwnership(Machine, "machine", "body"),
+  createPreventiveTask,
+);
 router.get("/", getPreventiveTasks);
 // Ruta para disparar el chequeo manualmente
 router.post("/test-cron", async (req, res) => {

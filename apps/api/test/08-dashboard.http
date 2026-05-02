@@ -1,0 +1,28 @@
+@apiUrl = http://localhost:3000/api
+
+# ADMIN
+#@email = juanchispita@fosforos.com
+#@password = password123
+
+# ADMIN DE OTRA EMPRESA
+@email = admin@fantasma.com
+@password = password123
+
+
+### 0. LOGIN PARA OBTENER EL TOKEN
+# @name login
+POST {{apiUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "{{email}}",
+  "password": "{{password}}"
+}
+
+###
+@token = {{login.response.body.token}}
+
+
+### Obtener Dashboard Gerencial (RF-11)
+GET http://localhost:3000/api/dashboard/stats
+Authorization: Bearer {{token}}

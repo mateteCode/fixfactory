@@ -7,6 +7,7 @@ export interface ISparePartRequest extends Document {
   estimatedCost?: number; // Costo registrado por Compras
   status: "Solicitado" | "Comprado" | "En Stock";
   requestedBy: string; // Técnico que lo solicita
+  company: Types.ObjectId;
 }
 
 const sparePartSchema = new Schema<ISparePartRequest>(
@@ -21,6 +22,12 @@ const sparePartSchema = new Schema<ISparePartRequest>(
       default: "Solicitado",
     },
     requestedBy: { type: String, required: true },
+    company: {
+      type: Schema.Types.ObjectId,
+      ref: "Company",
+      required: true,
+      index: true,
+    },
   },
   {
     timestamps: true, // Para auditoría (RF-14)

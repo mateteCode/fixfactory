@@ -1,2 +1,0 @@
-### Obtener Dashboard Gerencial (RF-11)
-GET http://localhost:3000/api/dashboard/stats

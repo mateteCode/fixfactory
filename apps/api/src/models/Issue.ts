@@ -1,24 +1,31 @@
 import { Schema, model, Document, Types } from "mongoose";
 
-// Definición de estados según la minuta de relevamiento [cite: 1326]
-export type IssueStatus =
-  | "Pendiente"
-  | "En Proceso"
-  | "En Espera de Repuesto"
-  | "Solucionado"
-  | "Cerrado";
+// Definición de estados según la minuta de relevamiento
+export enum IssueStatus {
+  PENDIENTE = "Pendiente",
+  EN_PROCESO = "En Proceso",
+  EN_ESPERA_DE_REPUESTO = "En Espera de Repuesto",
+  SOLUCIONADO = "Solucionado",
+  CERRADO = "Cerrado",
+}
+
+export enum IssuePriority {
+  BAJA = "Baja",
+  MEDIA = "Media",
+  ALTA = "Alta",
+}
 
 export interface IIssue extends Document {
   machine: Types.ObjectId; // Referencia a la máquina
   description: string; // Descripción del problema
-  priority: "Baja" | "Media" | "Alta"; // Prioridad
+  priority: IssuePriority; // Prioridad
   status: IssueStatus; // Estado del ciclo de vida
-  reportedBy: string; // Operario que detectó la falla
+  reportedBy: Types.ObjectId; // Operario que detectó la falla
   imageUrl?: string; // URL de la foto del problema
   technicalDiagnosis?: string; // Diagnóstico del técnico
   resolutionDetails?: string; // Qué se hizo para arreglarlo
   closedAt?: Date; // Fecha de cierre para métricas MTTR
-  company: string;
+  company: Types.ObjectId;
 }
 
 const issueSchema = new Schema<IIssue>(
@@ -27,26 +34,25 @@ const issueSchema = new Schema<IIssue>(
     description: { type: String, required: true },
     priority: {
       type: String,
-      enum: ["Baja", "Media", "Alta"],
-      default: "Media",
+      enum: Object.values(IssuePriority),
+      default: IssuePriority.MEDIA,
     },
     status: {
       type: String,
-      enum: [
-        "Pendiente",
-        "En Proceso",
-        "En Espera de Repuesto",
-        "Solucionado",
-        "Cerrado",
-      ],
-      default: "Pendiente",
+      enum: Object.values(IssueStatus),
+      default: IssueStatus.PENDIENTE,
     },
-    reportedBy: { type: String, required: true },
+    reportedBy: { type: Schema.Types.ObjectId, ref: "User", required: true },
     imageUrl: { type: String },
     technicalDiagnosis: { type: String },
     resolutionDetails: { type: String },
     closedAt: { type: Date },
-    company: { type: String, required: true, index: true },
+    company: {
+      type: Schema.Types.ObjectId,
+      ref: "Company",
+      required: true,
+      index: true,
+    },
   },
   {
     timestamps: true, // Para cumplir con la trazabilidad y auditoría (RF-14)

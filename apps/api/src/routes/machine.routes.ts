@@ -19,7 +19,7 @@ router.use(checkTenant);
 router.get("/", getMachines);
 router.get("/:id", getMachineById);
 router.post("/", createMachine);
-router.put("/:id", updateMachine);
+router.patch("/:id", updateMachine);
 router.delete("/:id", deleteMachine);
 router.get("/:id/history", getMachineHistory); // RF-02
 

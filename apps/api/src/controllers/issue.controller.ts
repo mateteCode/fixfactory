@@ -9,12 +9,30 @@ export const createIssue = async (
   res: Response,
 ): Promise<void> => {
   try {
-    const company = (req as any).company;
+    const companyId = (req as any).companyId;
     const userId = (req as any).user.id;
+    /*
+    const machineId = (req as any).body.machine;
+
+    // Validación si la máquina pertenece a la empresa del operario
+    const machine = await Machine.findOne({
+      _id: machineId,
+      company: companyId,
+    });
+
+    if (!machine) {
+      res.status(403).json({
+        message:
+          "Operación no permitida: La máquina no pertenece a tu empresa o no existe.",
+      });
+      return;
+    }
+    */
+    const machine = (req as any).validatedResource;
 
     const newIssue = new Issue({
       ...req.body,
-      company: company, // Inyección automática
+      company: companyId,
       reportedBy: userId, // Trazabilidad: quién la creó
     });
     const savedIssue = await newIssue.save();
@@ -23,10 +41,6 @@ export const createIssue = async (
     console.log(
       `Notification sent to Maintenance Lead: New issue ${savedIssue._id} created.`,
     );
-
-    // TODO: sendNotification con MAIL
-    // Buscamos el nombre de la máquina para el cuerpo del mail
-    const machine = await Machine.findOne({ _id: savedIssue.machine, company });
 
     // Disparar notificación asíncrona (RF-04)
     sendIssueNotification({
@@ -45,10 +59,13 @@ export const createIssue = async (
 // Obtener todas las incidencias (con población de datos de la máquina)
 export const getIssues = async (req: Request, res: Response): Promise<void> => {
   try {
-    const company = (req as any).company;
+    const companyId = (req as any).companyId;
 
-    // Filtramos por empresa y podemos popular la máquina para ver el nombre
-    const issues = await Issue.find({ company }).populate("machine", "name");
+    // Buscamos incidencias que pertenezcan a ese ID de objeto
+    const issues = await Issue.find({ company: companyId })
+      .populate("machine", "name code")
+      .sort({ createdAt: -1 });
+
     res.status(200).json(issues);
   } catch (error) {
     res.status(500).json({ message: "Error al recuperar incidencias", error });
@@ -61,13 +78,16 @@ export const getIssueById = async (
   res: Response,
 ): Promise<void> => {
   try {
-    const company = (req as any).company;
+    const companyId = (req as any).companyId;
     const issue = await Issue.findById({
       _id: req.params.id,
-      company,
+      company: companyId,
     }).populate("machine");
+
     if (!issue) {
-      res.status(404).json({ message: "Incidencia no encontrada" });
+      res
+        .status(404)
+        .json({ message: "Incidencia no encontrada o acceso denegado" });
       return;
     }
     res.status(200).json(issue);
@@ -82,11 +102,11 @@ export const updateIssue = async (
   res: Response,
 ): Promise<void> => {
   try {
+    const companyId = (req as any).companyId;
     const { status, description, priority } = req.body;
-    const company = (req as any).company; // Sacamos la empresa del token
 
     const updatedIssue = await Issue.findOneAndUpdate(
-      { id: req.params.id, company }, // Filtramos por ID Y por Empresa
+      { _id: req.params.id as string, company: companyId }, // Filtramos por ID Y por Empresa
       { status, description, priority },
       { new: true, runValidators: true },
     );
@@ -117,11 +137,11 @@ export const closeIssue = async (
   res: Response,
 ): Promise<void> => {
   try {
-    const company = (req as any).company;
+    const companyId = (req as any).companyId;
     const { technicalDiagnosis, resolutionDetails } = req.body;
 
     const updatedIssue = await Issue.findByIdAndUpdate(
-      { _id: req.params.id, company },
+      { _id: req.params.id, company: companyId },
       {
         technicalDiagnosis,
         resolutionDetails,

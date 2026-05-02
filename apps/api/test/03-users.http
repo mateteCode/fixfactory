@@ -17,10 +17,10 @@ Authorization: Bearer {{token}}
 
 ### B. BORRADO LÓGICO (Desactivar Técnico)
 # Reemplazar ID_USER
-PATCH http://localhost:3000/api/users/69f1d0174f470db004721e1d/deactivate
+PATCH http://localhost:3000/api/users/69f4616569c610fda7b50fd8/deactivate
 Authorization: Bearer {{token}}
 
 ### C. BORRADO FÍSICO (Eliminar por error de carga)
 # Reemplazar ID_USER
-DELETE http://localhost:3000/api/users/69f1d0174f470db004721e1d
+DELETE http://localhost:3000/api/users/69f4616569c610fda7b50fd8
 Authorization: Bearer {{token}}
