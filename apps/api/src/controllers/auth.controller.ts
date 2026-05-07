@@ -4,7 +4,6 @@ import User from "../models/User.js";
 import { PasswordHasher } from "../utils/PasswordHasher.js";
 import jwt from "jsonwebtoken";
 import mongoose from "mongoose";
-//import bcrypt from "bcryptjs";
 
 export const register = async (req: Request, res: Response) => {
   try {
@@ -39,7 +38,8 @@ export const register = async (req: Request, res: Response) => {
 export const login = async (req: Request, res: Response) => {
   try {
     const { email, password } = req.body;
-    const user = await User.findOne({ email });
+
+    const user = await User.findOne({ email }).populate("company");
 
     if (
       !user ||
@@ -60,6 +60,7 @@ export const login = async (req: Request, res: Response) => {
       process.env.JWT_SECRET || "secret_key",
       { expiresIn: "8h" },
     );
+    const company = await Company.findById(user.company);
 
     res.json({
       token,
@@ -73,7 +74,8 @@ export const login = async (req: Request, res: Response) => {
         id: user._id,
         name: user.name,
         role: user.role,
-        company: user.company,
+        company: user.company._id,
+        companyName: user.company ? user.company.name : "Empresa desconocida",
       },
     });
   } catch (error) {

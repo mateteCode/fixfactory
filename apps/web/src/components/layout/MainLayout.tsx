@@ -1,17 +1,23 @@
 // src/components/layout/MainLayout.tsx
 import { Outlet } from "react-router-dom";
 import Sidebar from "./Sidebar";
+import Header from "./Header";
 
 const MainLayout = () => {
   return (
-    <div className="flex h-screen bg-white">
+    <div className="flex h-screen bg-gray-100 overflow-hidden">
+      {/* 1. Barra Lateral */}
       <Sidebar />
-      <div className="flex-1 flex flex-col overflow-hidden">
-        <header className="h-16 bg-[#F5F5F5] border-b border-gray-300 flex items-center px-8 shadow-sm">
-          <h2 className="text-gray-600 font-semibold">Panel de Control</h2>
-        </header>
-        <main className="flex-1 overflow-y-auto p-8 bg-gray-50">
-          <Outlet /> {/* Aquí se renderizan las páginas */}
+
+      <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
+        {/* 2. Barra Superior (Header) */}
+        <Header />
+
+        {/* 3. Contenido de la página (Dashboard, Máquinas, etc.) */}
+        <main className="flex-1 overflow-y-auto p-6">
+          <div className="max-w-7xl mx-auto">
+            <Outlet />
+          </div>
         </main>
       </div>
     </div>
