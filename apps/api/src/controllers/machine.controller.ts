@@ -47,6 +47,7 @@ export const createMachine = async (
   res: Response,
 ): Promise<void> => {
   try {
+    console.log(req.body);
     const companyId = (req as any).companyId;
     const { code } = req.body;
 

@@ -9,6 +9,7 @@ export interface IMachine extends Document {
   installationDate: Date;
   technicalManualUrl?: string;
   company: Types.ObjectId;
+  //TODO: Agregar type: tipo de maquinaria, status: Operativa, Mantenimiento, En Falla
 }
 
 // Esquema de MongoDB siguiendo el requerimiento RF-01

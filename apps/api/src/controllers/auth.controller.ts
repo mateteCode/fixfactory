@@ -63,10 +63,18 @@ export const login = async (req: Request, res: Response) => {
 
     res.json({
       token,
+      /* // WARNING: Se cambio la estructura del json para que funcione en el front. Verificar que no afecte al backend
       id: user._id,
       companyId: user.company,
       role: user.role,
       name: user.name,
+      */
+      user: {
+        id: user._id,
+        name: user.name,
+        role: user.role,
+        company: user.company,
+      },
     });
   } catch (error) {
     res.status(500).json({ message: "Error en el servidor" });
