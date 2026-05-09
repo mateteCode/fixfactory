@@ -5,6 +5,7 @@ import { useAuthStore } from "./store/useAuthStore";
 import RegisterPage from "./pages/RegisterPage";
 import MachinesPage from "./pages/MachinesPage";
 import MachineDetailPage from "./pages/MachineDetailPage";
+import IncidentsPage from "./pages/IncidentsPage";
 
 function App() {
   const { isAuthenticated } = useAuthStore();
@@ -55,26 +56,13 @@ function App() {
               </div>
             }
           />
-          {/*
-            <Route
-              path="/maquinas"
-              element={
-                <div className="p-4">
-                  <h1>Máquinas</h1>
-                </div>
-              }
-            />
-          */}
+
+          {/* Gestión de Máquinas */}
           <Route path="/maquinas" element={<MachinesPage />} />
           <Route path="/maquinas/:id" element={<MachineDetailPage />} />
-          <Route
-            path="/ordenes"
-            element={
-              <div className="p-4">
-                <h1>Órdenes de Trabajo</h1>
-              </div>
-            }
-          />
+
+          {/* Gestión de Incidencias / Órdenes */}
+          <Route path="/ordenes" element={<IncidentsPage />} />
         </Route>
 
         <Route path="*" element={<Navigate to="/dashboard" replace />} />

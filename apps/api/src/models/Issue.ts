@@ -13,6 +13,7 @@ export enum IssuePriority {
   BAJA = "Baja",
   MEDIA = "Media",
   ALTA = "Alta",
+  CRITICA = "Crítica",
 }
 
 export interface IIssue extends Document {

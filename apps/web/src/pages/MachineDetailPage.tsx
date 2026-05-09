@@ -9,12 +9,16 @@ import {
   MapPin,
   Tag,
   History,
+  AlertTriangle,
 } from "lucide-react";
+import { useState } from "react";
+import ReportIncidentModal from "../components/incidents/ReportIncidentModal";
 
 const MachineDetailPage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const { machine, isLoading } = useMachineDetail(id);
+  const [isIncidentModalOpen, setIsIncidentModalOpen] = useState(false);
 
   if (isLoading)
     return (
@@ -77,6 +81,24 @@ const MachineDetailPage = () => {
               </div>
             </div>
           </div>
+          <button
+            onClick={() => setIsIncidentModalOpen(true)}
+            className="mt-4 w-full flex items-center justify-center space-x-2 bg-red-50 text-red-600 border border-red-200 px-4 py-2 rounded text-xs font-bold hover:bg-red-100 transition-colors uppercase"
+          >
+            <AlertTriangle size={14} />
+            <span>Reportar Incidencia</span>
+          </button>
+
+          <ReportIncidentModal
+            isOpen={isIncidentModalOpen}
+            onClose={() => setIsIncidentModalOpen(false)}
+            machineId={machine._id}
+            machineName={machine.name}
+            onSuccess={() => {
+              alert("Incidencia reportada con éxito");
+              // Aquí podrías recargar el historial si lo tuviéramos
+            }}
+          />
 
           <div className="bg-white p-6 rounded-lg border border-gray-200 shadow-sm">
             <h3 className="font-bold text-gray-700 mb-4 flex items-center">
