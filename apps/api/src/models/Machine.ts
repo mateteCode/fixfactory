@@ -9,6 +9,8 @@ export interface IMachine extends Document {
   installationDate: Date;
   technicalManualUrl?: string;
   company: Types.ObjectId;
+  status?: "Operativa" | "Mantenimiento" | "En Falla";
+  //TODO: Agregar type: tipo de maquinaria, status: Operativa, Mantenimiento, En Falla
 }
 
 // Esquema de MongoDB siguiendo el requerimiento RF-01
@@ -25,6 +27,11 @@ const machineSchema = new Schema<IMachine>(
       ref: "Company",
       required: true,
       index: true,
+    },
+    status: {
+      type: String,
+      enum: ["Operativa", "Mantenimiento", "En Falla"],
+      default: "Operativa",
     },
   },
   {

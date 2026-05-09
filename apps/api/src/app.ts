@@ -10,6 +10,7 @@ import userRoutes from "./routes/user.routes.js";
 import companyRoutes from "./routes/company.routes.js";
 
 const app = express();
+console.log("TEST");
 
 // Middlewares
 app.use(cors());
