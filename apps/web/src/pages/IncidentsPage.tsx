@@ -1,5 +1,6 @@
 import { useIncidentManager } from "../hooks/useIncidentManager";
 import { AlertCircle, Clock, CheckCircle2, Hammer } from "lucide-react";
+import { IssueStatus } from "../types/Issue";
 
 const IncidentsPage = () => {
   const { incidents, isLoading, updateStatus } = useIncidentManager();
@@ -67,7 +68,7 @@ const IncidentsPage = () => {
               </div>
 
               <div className="flex space-x-2">
-                {inc.status === "Pendiente" && (
+                {inc.status === IssueStatus.PENDIENTE && (
                   <button
                     onClick={() => updateStatus(inc._id, "En Proceso")}
                     className="px-4 py-2 bg-blue-600 text-white text-[10px] font-bold rounded hover:bg-blue-700 transition-colors uppercase"
@@ -75,7 +76,7 @@ const IncidentsPage = () => {
                     Tomar Trabajo
                   </button>
                 )}
-                {inc.status === "En Proceso" && (
+                {inc.status === IssueStatus.EN_PROCESO && (
                   <button
                     onClick={() => updateStatus(inc._id, "Cerrado")}
                     className="px-4 py-2 bg-green-600 text-white text-[10px] font-bold rounded hover:bg-green-700 transition-colors uppercase"

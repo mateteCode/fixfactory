@@ -1,12 +1,13 @@
 import { useState, useEffect } from "react";
 import api from "../api/axios";
+import type { IssueStatus } from "../types/Issue";
 
 export interface Incident {
   _id: string;
   machine: { name: string; code: string }; // Poblado desde el backend
   description: string;
   priority: "Baja" | "Media" | "Alta" | "Crítica";
-  status: "Abierta" | "En Proceso" | "Cerrado";
+  status: IssueStatus;
   createdAt: string;
 }
 
