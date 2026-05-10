@@ -1,0 +1,124 @@
+@apiUrl = http://localhost:3000/api
+
+# --- VARIABLES GLOBALES ---
+# Reemplazá estos valores con IDs reales de tu base de datos después de las primeras pruebas
+@machineId = 69f4629d69c610fda7b50fda
+@issueId = 6a002689de3fb465c6163330
+@sparePartId = {{createPart.response.body._id}}
+@requestId = {{createRequest.response.body._id}}
+
+### 0. LOGIN (Obtener Token)
+# @name login
+POST {{apiUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "juanchispita@fosforos.com",
+  "password": "password123"
+}
+
+###
+@token = {{login.response.body.token}}
+
+
+# ==========================================
+# 1. GESTIÓN DEL CATÁLOGO (Inventario)
+# ==========================================
+
+### 1.1 Crear un nuevo repuesto en el catálogo
+# @name createPart
+POST {{apiUrl}}/spare-parts
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "model": "SKF-6205-2Z",
+  "brand": "SKF",
+  "description": "Rodamiento de bolas sellado para motor principal",
+  "stockQuantity": 10,
+  "price": 1500.50,
+  "compatibleMachines": ["{{machineId}}"]
+}
+
+### 1.2 Obtener todo el catálogo
+GET {{apiUrl}}/spare-parts
+Authorization: Bearer {{token}}
+
+### 1.3 Ajustar stock manualmente (Ej: Auditoría de almacén +5 unidades)
+POST {{apiUrl}}/spare-parts/catalog/{{sparePartId}}/stock
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "quantity": 5
+}
+
+### 1.4 Actualizar datos del repuesto
+PATCH {{apiUrl}}/spare-parts/catalog/{{sparePartId}}
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "price": 1750.00,
+  "description": "Rodamiento SKF reforzado - Alta temperatura"
+}
+
+
+# ==========================================
+# 2. FLUJO DE SOLICITUDES (Pedidos)
+# ==========================================
+
+### 2.1 Crear pedido de repuesto (Técnico solicita)
+# @name createRequest
+POST {{apiUrl}}/spare-parts/request
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "issue": "{{issueId}}",
+  "sparePart": "{{sparePartId}}",
+  "quantity": 2
+}
+
+### 2.2 Ver todos los pedidos (Compras / Admin)
+# Aquí validamos el "Deep Populate" (Técnico, Máquina y Repuesto)
+GET {{apiUrl}}/spare-parts/requests
+Authorization: Bearer {{token}}
+
+### 2.3 Cambiar estado: COMPRADO
+PATCH {{apiUrl}}/spare-parts/request/{{requestId}}/status
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "status": "Comprado"
+}
+
+### 2.4 Cambiar estado: EN STOCK (Suma al inventario automáticamente)
+# Si pedimos 2, el stockQuantity del catálogo debería subir
+PATCH {{apiUrl}}/spare-parts/request/{{requestId}}/status
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "status": "En Stock"
+}
+
+### 2.5 Cambiar estado: ACEPTADO (Resta del inventario - Técnico retira)
+# El técnico retira las 2 piezas, el stockQuantity debe bajar
+PATCH {{apiUrl}}/spare-parts/request/{{requestId}}/status
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "status": "Aceptado"
+}
+
+
+# ==========================================
+# 3. BORRADO LÓGICO
+# ==========================================
+
+### 3.1 Desactivar repuesto del catálogo
+DELETE {{apiUrl}}/spare-parts/catalog/{{sparePartId}}
+Authorization: Bearer {{token}}

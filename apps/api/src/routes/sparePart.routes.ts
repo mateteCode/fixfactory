@@ -1,8 +1,14 @@
 import { Router } from "express";
 import {
+  getSpareParts,
+  createSparePart,
+  updateSparePart,
+  deleteSparePart,
+  adjustStock,
   createSparePartRequest,
   getSparePartRequests,
-  updatePurchaseDetails,
+  updateRequestStatus,
+  /*updatePurchaseDetails,*/
 } from "../controllers/sparePart.controller.js";
 import { checkTenant } from "../middlewares/tenant.middleware.js";
 import { authenticate } from "../middlewares/auth.middleware.js";
@@ -16,6 +22,49 @@ const router = Router();
 
 router.use(authenticate, checkTenant);
 
+// --- CATÁLOGO ---
+router.get("/", getSpareParts);
+router.post(
+  "/",
+  authorize([UserRole.ADMIN, UserRole.COMPRAS, UserRole.MANTENIMIENTO]),
+  createSparePart,
+);
+router.patch(
+  "/catalog/:id",
+  authorize([UserRole.ADMIN, UserRole.COMPRAS, UserRole.MANTENIMIENTO]),
+  updateSparePart,
+);
+router.delete("/catalog/:id", authorize([UserRole.ADMIN]), deleteSparePart);
+router.post(
+  "/catalog/:id/stock",
+  authorize([UserRole.ADMIN, UserRole.COMPRAS, UserRole.MANTENIMIENTO]),
+  adjustStock,
+);
+
+// --- SOLICITUDES (PEDIDOS) ---
+router.post(
+  "/request",
+  authorize([UserRole.TECNICO, UserRole.ADMIN]),
+  createSparePartRequest,
+);
+router.patch(
+  "/request/:id/status",
+  authorize([UserRole.COMPRAS, UserRole.ADMIN]),
+  updateRequestStatus,
+);
+router.get(
+  "/requests",
+  authorize([
+    UserRole.ADMIN,
+    UserRole.COMPRAS,
+    UserRole.MANTENIMIENTO,
+    UserRole.TECNICO,
+    UserRole.GERENTE,
+  ]),
+  getSparePartRequests,
+);
+
+/*
 router.post(
   "/",
   authorize([UserRole.TECNICO, UserRole.ADMIN]),
@@ -33,5 +82,6 @@ router.patch(
   validateOwnership(SparePartRequest, "id", "params"),
   updatePurchaseDetails,
 ); // Para el área de Compras (RF-10)
+*/
 
 export default router;
