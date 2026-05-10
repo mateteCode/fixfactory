@@ -8,6 +8,7 @@ import {
   History,
   Users,
   Calendar,
+  ShoppingCart,
 } from "lucide-react";
 import { useAuthStore } from "../../store/useAuthStore";
 
@@ -21,6 +22,7 @@ const Sidebar = () => {
     { name: "Órdenes", icon: ClipboardList, path: "/ordenes" },
     { name: "Preventivo", icon: Calendar, path: "/preventivo" },
     { name: "Repuestos", icon: Package, path: "/repuestos" },
+    { name: "Compras", icon: ShoppingCart, path: "/compras" },
   ];
 
   const user = useAuthStore((state) => state.user);

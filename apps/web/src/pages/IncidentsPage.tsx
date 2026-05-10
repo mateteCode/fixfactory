@@ -1,9 +1,18 @@
 import { useIncidentManager } from "../hooks/useIncidentManager";
-import { AlertCircle, Clock, CheckCircle2, Hammer } from "lucide-react";
+import {
+  AlertCircle,
+  Clock,
+  CheckCircle2,
+  Hammer,
+  PackageSearch,
+} from "lucide-react";
 import { IssueStatus } from "../types/Issue";
+import RequestSparePartModal from "../components/incidents/RequestSparePartModal";
+import { useState } from "react";
 
 const IncidentsPage = () => {
-  const { incidents, isLoading, updateStatus } = useIncidentManager();
+  const { incidents, isLoading, updateStatus, refetch } = useIncidentManager();
+  const [incidentForSparePart, setIncidentForSparePart] = useState<any>(null); // Guardará el incidente seleccionado
   console.log(incidents);
 
   const priorityStyles = {
@@ -68,6 +77,14 @@ const IncidentsPage = () => {
               </div>
 
               <div className="flex space-x-2">
+                {inc.status !== "Cerrado" && inc.status !== "Pendiente" && (
+                  <button
+                    onClick={() => setIncidentForSparePart(inc)}
+                    className="px-4 py-2 bg-gray-100 text-gray-700 border border-gray-300 text-[10px] font-bold rounded hover:bg-gray-200 transition-colors uppercase flex items-center"
+                  >
+                    <PackageSearch className="w-3 h-3 mr-1" /> Repuesto
+                  </button>
+                )}
                 {inc.status === IssueStatus.PENDIENTE && (
                   <button
                     onClick={() => updateStatus(inc._id, "En Proceso")}
@@ -90,6 +107,23 @@ const IncidentsPage = () => {
               </div>
             </div>
           ))
+        )}
+
+        {/* Renderizamos el modal */}
+        {incidentForSparePart && (
+          <RequestSparePartModal
+            isOpen={true}
+            onClose={() => setIncidentForSparePart(null)}
+            incidentId={incidentForSparePart._id}
+            // El backend que me pasaste antes en el controlador enviaba machine como un ID, o populado.
+            // Ajustalo según cómo te llegue en "incidents" (inc.machine._id o inc.machine)
+            machineId={
+              incidentForSparePart.machine._id || incidentForSparePart.machine
+            }
+            onSuccess={() => {
+              refetch(); // Recarga la lista para que la incidencia pase a "En Espera de Repuesto"
+            }}
+          />
         )}
       </div>
     </div>
