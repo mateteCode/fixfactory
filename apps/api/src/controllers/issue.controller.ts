@@ -82,7 +82,9 @@ export const getIssueById = async (
     const issue = await Issue.findById({
       _id: req.params.id,
       company: companyId,
-    }).populate("machine");
+    })
+      .populate("machine")
+      .populate("reportedBy", "name email");
 
     if (!issue) {
       res

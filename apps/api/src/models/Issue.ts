@@ -28,6 +28,7 @@ export interface IIssue extends Document {
   resolutionDetails?: string; // Qué se hizo para arreglarlo
   closedAt?: Date; // Fecha de cierre para métricas MTTR
   company: Types.ObjectId;
+  assignedTo?: Types.ObjectId;
 }
 
 const issueSchema = new Schema<IIssue>(
@@ -55,6 +56,7 @@ const issueSchema = new Schema<IIssue>(
       required: true,
       index: true,
     },
+    assignedTo: { type: Schema.Types.ObjectId, ref: "User" },
   },
   {
     timestamps: true, // Para cumplir con la trazabilidad y auditoría (RF-14)

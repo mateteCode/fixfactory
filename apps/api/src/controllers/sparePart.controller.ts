@@ -217,8 +217,13 @@ export const updateRequestStatus = async (req: Request, res: Response) => {
 export const getSparePartRequests = async (req: Request, res: Response) => {
   try {
     const companyId = (req as any).companyId;
+    const { issue } = req.query; // Capturamos el query param opcional
+    const filter: any = { company: companyId };
+    if (issue) {
+      filter.issue = issue; // Si mandan ?issue=123, filtramos por esa incidencia
+    }
 
-    const requests = await SparePartRequest.find({ company: companyId })
+    const requests = await SparePartRequest.find(filter)
       .populate("sparePart", "model brand price") // Datos del catálogo
       .populate("requestedBy", "name email") // Datos del técnico (usando la ref que sugeriste)
       .populate({

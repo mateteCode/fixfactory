@@ -5,15 +5,18 @@ import {
   CheckCircle2,
   Hammer,
   PackageSearch,
+  FileText,
 } from "lucide-react";
 import { IssueStatus } from "../types/Issue";
 import RequestSparePartModal from "../components/incidents/RequestSparePartModal";
 import { useState } from "react";
+import IncidentDetailModal from "../components/incidents/IncidentDetailModal";
 
 const IncidentsPage = () => {
   const { incidents, isLoading, updateStatus, refetch } = useIncidentManager();
   const [incidentForSparePart, setIncidentForSparePart] = useState<any>(null); // Guardará el incidente seleccionado
-  console.log(incidents);
+  const [detailModalId, setDetailModalId] = useState<string | null>(null);
+  //console.log(incidents);
 
   const priorityStyles = {
     Crítica: "bg-red-100 text-red-700 border-red-200",
@@ -77,6 +80,13 @@ const IncidentsPage = () => {
               </div>
 
               <div className="flex space-x-2">
+                {/* ---> Botón de detalle <--- */}
+                <button
+                  onClick={() => setDetailModalId(inc._id)}
+                  className="px-4 py-2 bg-gray-100 text-gray-700 border border-gray-300 text-[10px] font-bold rounded hover:bg-gray-200 transition-colors uppercase flex items-center"
+                >
+                  <FileText className="w-3 h-3 mr-1" /> Detalle
+                </button>
                 {inc.status !== "Cerrado" && inc.status !== "Pendiente" && (
                   <button
                     onClick={() => setIncidentForSparePart(inc)}
@@ -126,6 +136,10 @@ const IncidentsPage = () => {
           />
         )}
       </div>
+      <IncidentDetailModal
+        incidentId={detailModalId}
+        onClose={() => setDetailModalId(null)}
+      />
     </div>
   );
 };
