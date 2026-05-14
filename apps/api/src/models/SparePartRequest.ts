@@ -1,27 +1,40 @@
 import { Schema, model, Document, Types } from "mongoose";
 
+export enum SparePartStatus {
+  SOLICITADO = "Solicitado",
+  SIN_STOCK = "Sin Stock",
+  COMPRADO = "Comprado",
+  EN_STOCK = "En Stock",
+  ACEPTADO = "Aceptado",
+  RECHAZADO = "Rechazado",
+}
+
 export interface ISparePartRequest extends Document {
   issue: Types.ObjectId; // Incidencia que originó el pedido
-  description: string; // Detalle del repuesto (ej: "Rodamiento SKF 6205")
+  sparePart: Types.ObjectId; // Referencia al catálogo de repuestos
   quantity: number; // Cantidad necesaria
-  estimatedCost?: number; // Costo registrado por Compras
-  status: "Solicitado" | "Comprado" | "En Stock";
-  requestedBy: string; // Técnico que lo solicita
+  estimatedCost?: number; //Snapshot del costo (congelado al momento de pedir/comprar)
+  status: SparePartStatus;
+  requestedBy: Types.ObjectId;
   company: Types.ObjectId;
 }
 
 const sparePartSchema = new Schema<ISparePartRequest>(
   {
     issue: { type: Schema.Types.ObjectId, ref: "Issue", required: true },
-    description: { type: String, required: true },
+    sparePart: {
+      type: Schema.Types.ObjectId,
+      ref: "SparePart",
+      required: true,
+    },
     quantity: { type: Number, default: 1 },
     estimatedCost: { type: Number, default: 0 },
     status: {
       type: String,
-      enum: ["Solicitado", "Comprado", "En Stock"],
-      default: "Solicitado",
+      enum: Object.values(SparePartStatus),
+      default: SparePartStatus.SOLICITADO,
     },
-    requestedBy: { type: String, required: true },
+    requestedBy: { type: Schema.Types.ObjectId, ref: "User", required: true },
     company: {
       type: Schema.Types.ObjectId,
       ref: "Company",

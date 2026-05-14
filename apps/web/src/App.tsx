@@ -7,6 +7,8 @@ import MachinesPage from "./pages/MachinesPage";
 import MachineDetailPage from "./pages/MachineDetailPage";
 import IncidentsPage from "./pages/IncidentsPage";
 import Dashboard from "./pages/Dashboard";
+import SparePartsPage from "./pages/SparePartsPage";
+import PurchaseManagementPage from "./pages/PurchaseManagementPage";
 
 function App() {
   const { isAuthenticated } = useAuthStore();
@@ -51,13 +53,16 @@ function App() {
         >
           {/* Dashboard */}
           <Route path="/dashboard" element={<Dashboard />} />
-
           {/* Gestión de Máquinas */}
           <Route path="/maquinas" element={<MachinesPage />} />
           <Route path="/maquinas/:id" element={<MachineDetailPage />} />
-
           {/* Gestión de Incidencias / Órdenes */}
           <Route path="/ordenes" element={<IncidentsPage />} />
+          {/* Repuestos */}
+          <Route path="/repuestos" element={<SparePartsPage />} />
+
+          {/* Gestión de Compras */}
+          <Route path="/compras" element={<PurchaseManagementPage />} />
         </Route>
 
         <Route path="*" element={<Navigate to="/dashboard" replace />} />
