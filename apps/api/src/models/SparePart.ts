@@ -1,4 +1,4 @@
-import { Schema, model, Document, Types } from "mongoose";
+import { Schema, model, Document, Types, type ObjectId } from "mongoose";
 
 export interface ISparePart extends Document {
   modelName: string;
