@@ -23,7 +23,7 @@ const PurchaseManagementPage = () => {
       header: "Repuesto",
       accessor: (req: any) => (
         <div>
-          <p className="font-bold text-gray-800">{req.sparePart?.model}</p>
+          <p className="font-bold text-gray-800">{req.sparePart?.modelName}</p>
           <p className="text-[10px] text-gray-400">{req.sparePart?.brand}</p>
         </div>
       ),

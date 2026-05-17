@@ -137,7 +137,7 @@ const IncidentDetailModal = ({ incidentId, onClose }: Props) => {
                             >
                               <div>
                                 <span className="font-bold text-gray-800">
-                                  {p.sparePart?.model}
+                                  {p.sparePart?.modelName}
                                 </span>
                                 <span className="text-gray-500 text-xs ml-2">
                                   ({p.sparePart?.brand})

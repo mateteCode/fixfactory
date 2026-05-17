@@ -51,7 +51,7 @@ const AdjustStockModal = ({ isOpen, onClose, onSuccess, sparePart }: Props) => {
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
           <div className="text-center mb-4">
             <p className="text-sm font-bold text-gray-800">
-              {sparePart.brand} - {sparePart.model}
+              {sparePart.brand} - {sparePart.modelName}
             </p>
             <p className="text-xs text-gray-500">
               Stock actual:{" "}
