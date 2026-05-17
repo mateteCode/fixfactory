@@ -39,7 +39,7 @@ export const login = async (req: Request, res: Response) => {
   try {
     const { email, password } = req.body;
 
-    const user = await User.findOne({ email }).populate("company");
+    const user = await User.findOne({ email });
 
     if (
       !user ||
@@ -54,13 +54,14 @@ export const login = async (req: Request, res: Response) => {
       });
     }
 
+    const company = await Company.findById(user.company);
+
     // Generar el Token con el Rol y la Compañía
     const token = jwt.sign(
-      { id: user._id, role: user.role, company: user.company },
+      { id: user._id, role: user.role, company: company?._id || user.company },
       process.env.JWT_SECRET || "secret_key",
       { expiresIn: "8h" },
     );
-    const company = await Company.findById(user.company);
 
     res.json({
       token,
@@ -74,8 +75,8 @@ export const login = async (req: Request, res: Response) => {
         id: user._id,
         name: user.name,
         role: user.role,
-        company: user.company._id,
-        companyName: user.company ? user.company.name : "Empresa desconocida",
+        company: company?._id || user.company,
+        companyName: company?.name || "Empresa desconocida",
       },
     });
   } catch (error) {
