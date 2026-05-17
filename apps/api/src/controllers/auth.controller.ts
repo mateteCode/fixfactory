@@ -75,7 +75,10 @@ export const login = async (req: Request, res: Response) => {
         name: user.name,
         role: user.role,
         company: user.company._id,
-        companyName: user.company ? user.company.name : "Empresa desconocida",
+        companyName:
+          user.company && (user.company as any).name
+            ? (user.company as any).name
+            : "Empresa desconocida",
       },
     });
   } catch (error) {

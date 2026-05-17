@@ -13,7 +13,15 @@ const app = express();
 console.log("TEST");
 
 // Middlewares
-app.use(cors());
+app.use(
+  cors({
+    origin: "https://fixfactory.vercel.app:5173", // El origen de tu frontend en desarrollo
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+    credentials: true, // Permitir cookies o headers de autenticación si los usas
+    optionsSuccessStatus: 200, // Algunas versiones de navegadores antiguos fallan con el 204 por defecto
+  }),
+);
 app.use(express.json());
 
 // RUTA DE DIAGNÓSTICO

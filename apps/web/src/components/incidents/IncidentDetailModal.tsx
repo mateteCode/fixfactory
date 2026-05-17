@@ -130,7 +130,7 @@ const IncidentDetailModal = ({ incidentId, onClose }: Props) => {
                           </span>
                         </div>
                         <ul className="divide-y divide-gray-100">
-                          {parts.map((p) => (
+                          {parts.map((p: any) => (
                             <li
                               key={p._id}
                               className="p-3 text-sm flex justify-between items-center hover:bg-gray-50"
