@@ -1,7 +1,7 @@
 import { Schema, model, Document, Types } from "mongoose";
 
 export interface ISparePart extends Document {
-  model: string;
+  modelName: string;
   brand: string;
   description: string;
   stockQuantity: number;
@@ -13,7 +13,7 @@ export interface ISparePart extends Document {
 
 const sparePartSchema = new Schema<ISparePart>(
   {
-    model: { type: String, required: true },
+    modelName: { type: String, required: true },
     brand: { type: String, required: true },
     description: { type: String, required: true },
     stockQuantity: { type: Number, default: 0, min: 0 },
