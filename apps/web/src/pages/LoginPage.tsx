@@ -27,6 +27,7 @@ const LoginPage = () => {
       setError(
         err.response?.data?.message || "Error al conectar con el servidor",
       );
+      console.log(err);
       //alert("Error en las credenciales");
     } finally {
       setIsLoading(false);

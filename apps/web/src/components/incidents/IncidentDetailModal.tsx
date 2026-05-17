@@ -29,6 +29,7 @@ const IncidentDetailModal = ({ incidentId, onClose }: Props) => {
     },
     {} as Record<string, any[]>,
   );
+  console.log(groupedParts);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
@@ -137,7 +138,7 @@ const IncidentDetailModal = ({ incidentId, onClose }: Props) => {
                             >
                               <div>
                                 <span className="font-bold text-gray-800">
-                                  {p.sparePart?.model}
+                                  {p.sparePart?.modelName}
                                 </span>
                                 <span className="text-gray-500 text-xs ml-2">
                                   ({p.sparePart?.brand})

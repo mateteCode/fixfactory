@@ -88,7 +88,8 @@ const RequestSparePartModal = ({
                   </option>
                   {compatibleParts.map((part) => (
                     <option key={part._id} value={part._id}>
-                      {part.model} - {part.brand} (Stock: {part.stockQuantity})
+                      {part.modelName} - {part.brand} (Stock:{" "}
+                      {part.stockQuantity})
                     </option>
                   ))}
                 </select>
