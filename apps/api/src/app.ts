@@ -10,13 +10,12 @@ import userRoutes from "./routes/user.routes.js";
 import companyRoutes from "./routes/company.routes.js";
 
 const app = express();
-console.log("TEST");
 
 // Middlewares
 //app.use(cors());
 app.use(
   cors({
-    origin: process.env.CORS_ORIGIN || "https://fixfactory.vercel.app:5173", // El origen de tu frontend en desarrollo
+    origin: process.env.CORS_ORIGIN, // El origen de tu frontend en desarrollo
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
     allowedHeaders: ["Content-Type", "Authorization"],
     credentials: true, // Permitir cookies o headers de autenticación si los usas
