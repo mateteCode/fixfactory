@@ -9,6 +9,9 @@ import IncidentsPage from "./pages/IncidentsPage";
 import Dashboard from "./pages/Dashboard";
 import SparePartsPage from "./pages/SparePartsPage";
 import PurchaseManagementPage from "./pages/PurchaseManagementPage";
+import ClientsPage from "./pages/ClientsPage";
+import HistoryPage from "./pages/HistoryPage";
+import PreventivePage from "./pages/PreventivePage";
 
 function App() {
   const { isAuthenticated } = useAuthStore();
@@ -53,11 +56,17 @@ function App() {
         >
           {/* Dashboard */}
           <Route path="/dashboard" element={<Dashboard />} />
+          {/* NUEVO: Clientes */}
+          <Route path="/clientes" element={<ClientsPage />} />
           {/* Gestión de Máquinas */}
           <Route path="/maquinas" element={<MachinesPage />} />
           <Route path="/maquinas/:id" element={<MachineDetailPage />} />
+          {/* NUEVO: Historial */}
+          <Route path="/historial" element={<HistoryPage />} />
           {/* Gestión de Incidencias / Órdenes */}
           <Route path="/ordenes" element={<IncidentsPage />} />
+          {/* NUEVO: Preventivo */}
+          <Route path="/preventivo" element={<PreventivePage />} />
           {/* Repuestos */}
           <Route path="/repuestos" element={<SparePartsPage />} />
 
