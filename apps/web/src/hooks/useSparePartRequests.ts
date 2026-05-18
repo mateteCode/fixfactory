@@ -9,7 +9,7 @@ export interface RequestSparePartData {
 
 export interface SparePartRequest {
   _id: string;
-  sparePart: { _id: string; model: string; brand: string; price: number };
+  sparePart: { _id: string; modelName: string; brand: string; price: number };
   issue: {
     _id: string;
     machine: { name: string; code: string };
@@ -38,8 +38,13 @@ export const useSparePartRequests = () => {
   }, []);
 
   const updateRequestStatus = async (id: string, status: string) => {
-    await api.patch(`/spare-parts/request/${id}/status`, { status });
-    fetchRequests();
+    console.log(id, status);
+    try {
+      await api.patch(`/spare-parts/request/${id}/status`, { status });
+      fetchRequests();
+    } catch (error) {
+      console.error("Error al actualizar el estado del pedido:", error);
+    }
   };
 
   const createRequest = async (data: RequestSparePartData) => {

@@ -3,7 +3,7 @@ import api from "../api/axios";
 
 export interface SparePart {
   _id: string;
-  model: string;
+  modelName: string;
   brand: string;
   description: string;
   stockQuantity: number;

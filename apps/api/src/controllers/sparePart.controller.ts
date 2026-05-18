@@ -186,7 +186,12 @@ export const updateRequestStatus = async (req: Request, res: Response) => {
       // Si llegó el repuesto, sumamos al stock global
       if (part) {
         part.stockQuantity += request.quantity;
-        await part.save();
+        try {
+          await part.save();
+          console.log("GUARDADO");
+        } catch (error) {
+          console.log(error);
+        }
       }
     } else if (status === SparePartStatus.ACEPTADO) {
       // Si el técnico lo retira, restamos del stock global
@@ -224,7 +229,7 @@ export const getSparePartRequests = async (req: Request, res: Response) => {
     }
 
     const requests = await SparePartRequest.find(filter)
-      .populate("sparePart", "model brand price") // Datos del catálogo
+      .populate("sparePart", "modelName brand price") // Datos del catálogo
       .populate("requestedBy", "name email") // Datos del técnico (usando la ref que sugeriste)
       .populate({
         path: "issue",
