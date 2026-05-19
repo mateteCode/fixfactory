@@ -13,7 +13,7 @@ const AddSparePartModal = ({ isOpen, onClose, onSuccess }: Props) => {
   const { machines } = useMachines(); // Traemos las máquinas para la compatibilidad
   const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState({
-    model: "",
+    modelName: "",
     brand: "",
     description: "",
     price: 0,
@@ -79,7 +79,7 @@ const AddSparePartModal = ({ isOpen, onClose, onSuccess }: Props) => {
                 required
                 className="w-full px-3 py-2 border border-gray-300 rounded text-sm outline-none focus:border-gray-500"
                 onChange={(e) =>
-                  setFormData({ ...formData, model: e.target.value })
+                  setFormData({ ...formData, modelName: e.target.value })
                 }
               />
             </div>

@@ -24,6 +24,7 @@ export const getSpareParts = async (req: Request, res: Response) => {
 export const createSparePart = async (req: Request, res: Response) => {
   try {
     const companyId = (req as any).companyId;
+    console.log(req.body);
     const newPart = new SparePart({ ...req.body, company: companyId });
     await newPart.save();
     res.status(201).json(newPart);
