@@ -2,6 +2,28 @@ import type { Request, Response } from "express";
 import { sendIssueNotification } from "../services/mail.service.js";
 import Machine from "../models/Machine.js";
 import Issue from "../models/Issue.js";
+import { IssueStatus } from "../models/Issue.js";
+
+// Helper local para verificar y restablecer la máquina si corresponde
+const syncMachineStatus = async (machineId: any, companyId: any) => {
+  // Contamos si queda alguna incidencia que NO esté cerrada para esta máquina
+  const incidenciasActivas = await Issue.countDocuments({
+    machine: machineId,
+    company: companyId,
+    status: { $ne: IssueStatus.CERRADO },
+  });
+
+  // Si ya no quedan fallas abiertas, devolvemos la máquina a estado "Operativa"
+  if (incidenciasActivas === 0) {
+    await Machine.findOneAndUpdate(
+      { _id: machineId, company: companyId },
+      { status: "Operativa" },
+    );
+    console.log(
+      `[Automatización] Máquina ${machineId} restablecida a 'Operativa'.`,
+    );
+  }
+};
 
 // Crear una incidencia (RF-03) [cite: 1398]
 export const createIssue = async (
@@ -36,6 +58,15 @@ export const createIssue = async (
       reportedBy: userId, // Trazabilidad: quién la creó
     });
     const savedIssue = await newIssue.save();
+
+    // Al reportar un fallo, la máquina pasa automáticamente a "En Falla"
+    await Machine.findOneAndUpdate(
+      { _id: machine._id, company: companyId },
+      { status: "En Falla" },
+    );
+    console.log(
+      `[Automatización] Máquina ${machine._id} cambiada a 'En Falla'.`,
+    );
 
     // Simulación de Notificación Automática (RF-04)
     console.log(
@@ -120,6 +151,11 @@ export const updateIssue = async (
       return;
     }
 
+    // Si se cambia el estado a Cerrado verificadar si se puede cambiar el estado de la maquina
+    if (status === IssueStatus.CERRADO) {
+      await syncMachineStatus(updatedIssue.machine, companyId);
+    }
+
     // Si el estado cambia a "Solucionado", podríamos disparar otra notificación en el futuro
     if (status === "Solucionado") {
       console.log(`Notification: Issue ${updatedIssue._id} has been resolved.`);
@@ -147,7 +183,7 @@ export const closeIssue = async (
       {
         technicalDiagnosis,
         resolutionDetails,
-        status: "Cerrado", // Estado final del flujo
+        status: IssueStatus.CERRADO, // Estado final del flujo
         closedAt: new Date(),
       },
       { new: true, runValidators: true },
@@ -157,6 +193,9 @@ export const closeIssue = async (
       res.status(404).json({ message: "Incidencia no encontrada" });
       return;
     }
+
+    // Al cerrar definitivamente, disparamos el chequeo de la máquina
+    await syncMachineStatus(updatedIssue.machine, companyId);
 
     res.status(200).json(updatedIssue);
   } catch (error) {
