@@ -1,4 +1,3 @@
-// src/components/common/DataTable.tsx
 interface DataTableProps<T> {
   columns: {
     header: string;
