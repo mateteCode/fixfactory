@@ -210,6 +210,29 @@ export const updateRequestStatus = async (req: Request, res: Response) => {
     request.status = status;
     await request.save();
 
+    // Verificar si todos los repuestos del Issue están resueltos
+    if (
+      status === SparePartStatus.ACEPTADO ||
+      status === SparePartStatus.RECHAZADO
+    ) {
+      // Contamos cuántos repuestos de esta incidencia NO están Aceptados ni Rechazados
+      const pendingParts = await SparePartRequest.countDocuments({
+        issue: request.issue,
+        company: companyId,
+        status: { $nin: [SparePartStatus.ACEPTADO, SparePartStatus.RECHAZADO] },
+      });
+
+      // Si no queda ningún repuesto pendiente, avanzamos la incidencia
+      if (pendingParts === 0) {
+        await Issue.findByIdAndUpdate(request.issue, {
+          status: IssueStatus.EN_PROCESO,
+        });
+        console.log(
+          `Incidencia ${request.issue} actualizada a DIAGNOSTICADO automáticamente.`,
+        );
+      }
+    }
+
     res.json(request);
   } catch (error) {
     res.status(400).json({ message: "Error al actualizar estado del pedido" });
