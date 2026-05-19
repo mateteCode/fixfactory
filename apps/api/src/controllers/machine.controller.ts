@@ -133,10 +133,12 @@ export const getMachineHistory = async (
         nextDate: 1,
       }),
       // Para los repuestos, buscamos los vinculados a las incidencias de esta máquina
-      SparePartRequest.find().populate({
-        path: "issue",
-        match: { machine: id },
-      }),
+      SparePartRequest.find()
+        .populate({
+          path: "issue",
+          match: { machine: id },
+        })
+        .populate("sparePart"),
     ]);
 
     // Filtramos los repuestos que efectivamente pertenecen a esta máquina

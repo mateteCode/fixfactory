@@ -48,13 +48,13 @@ const Dashboard = () => {
     },
     {
       label: "MTTR (Hs)",
-      value: stats.mttrHours,
+      value: `${(stats.mttrHours || 0).toLocaleString("es-AR", { minimumFractionDigits: 1 })}`,
       icon: TimerReset,
       color: "text-red-600",
     },
     {
-      label: "Gastos Repuestos (USD)",
-      value: stats.totalSpent,
+      label: "Mantenimiento (USD)",
+      value: `${(stats.totalSpent || 0).toLocaleString("es-AR", { minimumFractionDigits: 0 })}`,
       icon: BadgeDollarSign,
       color: "text-red-600",
     },

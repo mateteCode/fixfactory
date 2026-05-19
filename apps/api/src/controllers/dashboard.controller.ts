@@ -73,7 +73,7 @@ export const getGeneralStats = async (
     // 3. Costo Total en Repuestos (RF-10)
     const spareParts = await SparePartRequest.find({
       company: companyId,
-      status: "Comprado",
+      status: { $in: ["Comprado", "En Stock", "Aceptado"] },
     });
     const totalSpent = spareParts.reduce(
       (acc, curr) => acc + (curr.estimatedCost || 0) * curr.quantity,
