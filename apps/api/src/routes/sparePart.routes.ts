@@ -60,6 +60,7 @@ router.get(
     UserRole.MANTENIMIENTO,
     UserRole.TECNICO,
     UserRole.GERENTE,
+    UserRole.OPERARIO,
   ]),
   getSparePartRequests,
 );

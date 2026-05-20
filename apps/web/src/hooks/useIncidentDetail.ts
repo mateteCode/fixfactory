@@ -5,14 +5,15 @@ export const useIncidentDetail = (incidentId: string | null) => {
   const [incident, setIncident] = useState<any>(null);
   const [spareParts, setSpareParts] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null); // NUEVO ESTADO
 
   useEffect(() => {
     if (!incidentId) return;
 
     const fetchDetails = async () => {
       setIsLoading(true);
+      setError(null);
       try {
-        // Ejecutamos ambas peticiones en paralelo
         const [incRes, partsRes] = await Promise.all([
           api.get(`/issues/${incidentId}`),
           api.get(`/spare-parts/requests?issue=${incidentId}`),
@@ -20,8 +21,10 @@ export const useIncidentDetail = (incidentId: string | null) => {
 
         setIncident(incRes.data);
         setSpareParts(partsRes.data);
-      } catch (error) {
-        console.error("Error al cargar detalles de la incidencia:", error);
+      } catch (err: any) {
+        console.error("Error al cargar detalles:", err);
+        // Capturamos el mensaje del backend o lanzamos uno por defecto
+        setError(err.response?.data?.message || "Acceso denegado o error de conexión.");
       } finally {
         setIsLoading(false);
       }
@@ -30,5 +33,5 @@ export const useIncidentDetail = (incidentId: string | null) => {
     fetchDetails();
   }, [incidentId]);
 
-  return { incident, spareParts, isLoading };
+  return { incident, spareParts, isLoading, error }; // Exportamos el error
 };
