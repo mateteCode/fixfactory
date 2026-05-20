@@ -21,6 +21,7 @@ const SparePartsPage = () => {
   const columns = [
     { header: "Modelo", accessor: "modelName" as keyof SparePart },
     { header: "Marca", accessor: "brand" as keyof SparePart },
+    { header: "Descripción", accessor: "description" as keyof SparePart },
     {
       header: "Stock",
       accessor: (item: SparePart) => (

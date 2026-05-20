@@ -65,7 +65,9 @@ const MachineDetailPage = () => {
               ? "bg-green-50 text-green-700 border-green-200"
               : machine.status === "En Falla"
                 ? "bg-red-50 text-red-700 border-red-200"
-                : "bg-yellow-50 text-yellow-700 border-yellow-200"
+                : machine.status === "Mantenimiento"
+                  ? "bg-yellow-50 text-yellow-700 border-yellow-200"
+                  : "bg-gray-50 text-gray-700 border-gray-200"
           }`}
         >
           {machine.status}

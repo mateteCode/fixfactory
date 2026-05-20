@@ -138,9 +138,18 @@ export const updateIssue = async (
     const companyId = (req as any).companyId;
     const { status, description, priority } = req.body;
 
+    // Armamos el objeto de actualización
+    const updateData: any = { status, description, priority };
+
+    console.log(status);
+    // Si el estado cambia a CERRADO, guardamos la fecha de cierre
+    if (status === IssueStatus.CERRADO) {
+      updateData.closedAt = new Date();
+    }
+
     const updatedIssue = await Issue.findOneAndUpdate(
       { _id: req.params.id as string, company: companyId }, // Filtramos por ID Y por Empresa
-      { status, description, priority },
+      updateData,
       { new: true, runValidators: true },
     );
 
@@ -154,10 +163,7 @@ export const updateIssue = async (
     // Si se cambia el estado a Cerrado verificadar si se puede cambiar el estado de la maquina
     if (status === IssueStatus.CERRADO) {
       await syncMachineStatus(updatedIssue.machine, companyId);
-    }
-
-    // Si el estado cambia a "Solucionado", podríamos disparar otra notificación en el futuro
-    if (status === "Solucionado") {
+      // Podríamos disparar otra notificación en el futuro
       console.log(`Notification: Issue ${updatedIssue._id} has been resolved.`);
     }
 

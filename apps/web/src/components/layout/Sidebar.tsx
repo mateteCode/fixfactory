@@ -36,7 +36,7 @@ const Sidebar = () => {
     <aside className="w-64 bg-[#D1D1D1] h-screen flex flex-col border-r border-gray-300 shadow-inner">
       <div className="p-6 border-b border-gray-400">
         <div className="bg-[#7A7A7A] text-white py-2 px-4 rounded text-center font-bold text-xs tracking-tighter uppercase shadow-sm">
-          CMMS LOGO
+          {user ? user.companyName : "CMMS LOGO"}
         </div>
       </div>
       <nav className="flex-1 p-4 space-y-1">

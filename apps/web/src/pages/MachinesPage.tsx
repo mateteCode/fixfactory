@@ -24,7 +24,9 @@ const MachinesPage = () => {
               ? "bg-green-100 text-green-700"
               : item.status === "En Falla"
                 ? "bg-red-100 text-red-700"
-                : "bg-yellow-100 text-yellow-700"
+                : item.status === "Mantenimiento"
+                  ? "bg-yellow-100 text-yellow-700"
+                  : "bg-gray-100 text-gray-700"
           }`}
         >
           {item.status}

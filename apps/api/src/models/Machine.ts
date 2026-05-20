@@ -9,7 +9,7 @@ export interface IMachine extends Document {
   installationDate: Date;
   technicalManualUrl?: string;
   company: Types.ObjectId;
-  status?: "Operativa" | "Mantenimiento" | "En Falla";
+  status?: "Operativa" | "Mantenimiento" | "En Falla" | "Apagada";
   //TODO: Agregar type: tipo de maquinaria, status: Operativa, Mantenimiento, En Falla
 }
 

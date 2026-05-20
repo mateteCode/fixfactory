@@ -20,6 +20,11 @@ const Dashboard = () => {
   const { stats, isLoading } = useDashboard();
 
   const COLORS = ["#22c55e", "#ef4444", "#eab308"]; // Verde, Rojo, Amarillo
+  const STATUS_COLORS: Record<string, string> = {
+    Operativa: "#22c55e", // Verde
+    "En Falla": "#ef4444", // Rojo
+    Mantenimiento: "#eab308", // Amarillo
+  };
 
   const cards = [
     {
@@ -110,7 +115,7 @@ const Dashboard = () => {
                     {stats.machineStatusData.map((entry, index) => (
                       <Cell
                         key={`cell-${index}`}
-                        fill={COLORS[index % COLORS.length]}
+                        fill={STATUS_COLORS[entry.name] || "#9ca3af"}
                       />
                     ))}
                   </Pie>
