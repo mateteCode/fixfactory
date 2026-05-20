@@ -1,17 +1,41 @@
 import { useState } from "react";
 import { useEmployees, type Employee } from "../hooks/useEmployees";
 import { DataTable } from "../components/common/DataTable";
-import { BriefcaseBusiness, Plus, ShieldCheck } from "lucide-react";
+import {
+  BriefcaseBusiness,
+  Plus,
+  ShieldCheck,
+  Users,
+  Edit,
+  UserMinus,
+} from "lucide-react";
 import { useAuthStore } from "../store/useAuthStore";
 import AddEmployeeModal from "../components/employees/AddEmployeeModal";
+import EditEmployeeModal from "../components/employees/EditEmployeeModal";
 
 const EmployeePage = () => {
   const { employees, isLoading, refetch } = useEmployees();
   const user = useAuthStore((state) => state.user);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingEmployee, setEditingEmployee] = useState<Employee | null>(null);
 
   // Solo ADMIN o GERENTE pueden crear empleados
   const canManageStaff = ["ADMIN", "GERENTE"].includes(user?.role || "");
+
+  const handleDeactivate = async (id: string, name: string) => {
+    if (
+      window.confirm(
+        `¿Estás seguro que deseas desactivar a ${name}? Ya no podrá iniciar sesión.`,
+      )
+    ) {
+      try {
+        await deactivateEmployee(id);
+        alert("Usuario desactivado correctamente");
+      } catch (error: any) {
+        alert(error.message);
+      }
+    }
+  };
 
   const roleStyles: Record<string, string> = {
     ADMIN: "bg-purple-100 text-purple-700 border-purple-200",
@@ -37,6 +61,34 @@ const EmployeePage = () => {
           <ShieldCheck className="w-3 h-3 mr-1" />
           {emp.role}
         </span>
+      ),
+    },
+    {
+      header: "Acciones",
+      accessor: (emp: Employee) => (
+        <div className="flex space-x-2">
+          {canManageStaff && (
+            <>
+              <button
+                onClick={() => setEditingEmployee(emp)}
+                className="p-1.5 bg-blue-50 text-blue-600 rounded hover:bg-blue-100 transition-colors"
+                title="Editar Empleado"
+              >
+                <Edit size={14} />
+              </button>
+              {/* Evitar que el usuario se desactive a sí mismo */}
+              {user?.id !== emp._id && (
+                <button
+                  onClick={() => handleDeactivate(emp._id, emp.name)}
+                  className="p-1.5 bg-red-50 text-red-600 rounded hover:bg-red-100 transition-colors"
+                  title="Desactivar Empleado"
+                >
+                  <UserMinus size={14} />
+                </button>
+              )}
+            </>
+          )}
+        </div>
       ),
     },
   ];
@@ -78,6 +130,13 @@ const EmployeePage = () => {
       <AddEmployeeModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
+        onSuccess={refetch}
+      />
+
+      <EditEmployeeModal
+        isOpen={!!editingEmployee}
+        onClose={() => setEditingEmployee(null)}
+        employee={editingEmployee}
         onSuccess={refetch}
       />
     </div>

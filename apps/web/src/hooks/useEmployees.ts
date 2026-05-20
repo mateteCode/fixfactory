@@ -43,6 +43,34 @@ export const useEmployees = () => {
     }
   };
 
+  const updateEmployee = async (
+    id: string,
+    data: { name: string; email: string; role: string },
+  ) => {
+    try {
+      setIsSubmitting(true);
+      await api.put(`/users/${id}`, data);
+      await fetchEmployees();
+    } catch (error: any) {
+      throw new Error(
+        error.response?.data?.message || "Error al actualizar empleado",
+      );
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const deactivateEmployee = async (id: string) => {
+    try {
+      await api.patch(`/users/${id}/deactivate`);
+      await fetchEmployees();
+    } catch (error: any) {
+      throw new Error(
+        error.response?.data?.message || "Error al desactivar empleado",
+      );
+    }
+  };
+
   useEffect(() => {
     fetchEmployees();
   }, [fetchEmployees]);
@@ -52,6 +80,8 @@ export const useEmployees = () => {
     isLoading,
     isSubmitting,
     createEmployee,
+    updateEmployee,
+    deactivateEmployee,
     refetch: fetchEmployees,
   };
 };

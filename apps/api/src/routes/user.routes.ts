@@ -4,6 +4,7 @@ import {
   createUser,
   deactivateUser,
   deleteUserPhysical,
+  updateUser,
 } from "../controllers/user.controller.js";
 import { authenticate } from "../middlewares/auth.middleware.js";
 import { authorize } from "../middlewares/role.middleware.js";
@@ -26,5 +27,7 @@ router.patch(
 router.delete("/:id", authorize([UserRole.ADMIN]), deleteUserPhysical); // El físico solo el ADMIN
 
 router.post("/", authorize([UserRole.ADMIN, UserRole.ASISTENTE]), createUser);
+
+router.put("/:id", authorize([UserRole.ADMIN, UserRole.ASISTENTE]), updateUser);
 
 export default router;
