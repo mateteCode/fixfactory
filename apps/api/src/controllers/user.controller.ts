@@ -118,3 +118,43 @@ export const deleteUserPhysical = async (req: Request, res: Response) => {
     res.status(500).json({ message: "Error al eliminar usuario" });
   }
 };
+
+export const updateUser = async (
+  req: Request,
+  res: Response,
+): Promise<void> => {
+  try {
+    const companyId = (req as any).companyId;
+    const { id } = req.params;
+    const { name, email, role } = req.body;
+
+    // Verificar si el nuevo correo ya está en uso por OTRO usuario
+    if (email) {
+      const existingUser = await User.findOne({ email, _id: { $ne: id } });
+      if (existingUser) {
+        res.status(400).json({
+          message: "El correo electrónico ya está en uso por otro usuario.",
+        });
+        return;
+      }
+    }
+
+    // Actualizamos explícitamente solo los campos permitidos
+    const updatedUser = await User.findOneAndUpdate(
+      { _id: id, company: companyId },
+      { name, email, role },
+      { new: true, runValidators: true },
+    ).select("-password");
+
+    if (!updatedUser) {
+      res.status(404).json({
+        message: "Usuario no encontrado o no pertenece a tu empresa.",
+      });
+      return;
+    }
+
+    res.status(200).json(updatedUser);
+  } catch (error) {
+    res.status(400).json({ message: "Error al actualizar el empleado", error });
+  }
+};
