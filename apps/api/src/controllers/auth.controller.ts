@@ -4,6 +4,9 @@ import User from "../models/User.js";
 import { PasswordHasher } from "../utils/PasswordHasher.js";
 import jwt from "jsonwebtoken";
 import mongoose from "mongoose";
+import crypto from "crypto";
+import bcrypt from "bcryptjs";
+import { sendPasswordResetEmail } from "../services/mail.service.js";
 
 export const register = async (req: Request, res: Response) => {
   try {
@@ -133,5 +136,117 @@ export const registerCompany = async (req: Request, res: Response) => {
     res
       .status(500)
       .json({ message: "Error en el registro maestro", error: error.message });
+  }
+};
+
+export const changePassword = async (
+  req: Request,
+  res: Response,
+): Promise<void> => {
+  try {
+    const userId = (req as any).user.id; // Viene del token JWT
+    const { currentPassword, newPassword } = req.body;
+
+    const user = await User.findById(userId);
+    if (!user) {
+      res.status(404).json({ message: "Usuario no encontrado" });
+      return;
+    }
+
+    // Verificar contraseña actual
+    const isMatch = await bcrypt.compare(currentPassword, user.password);
+    if (!isMatch) {
+      res.status(400).json({ message: "La contraseña actual es incorrecta" });
+      return;
+    }
+
+    // Encriptar y guardar la nueva
+    const salt = await bcrypt.genSalt(10);
+    user.password = await bcrypt.hash(newPassword, salt);
+    await user.save();
+
+    res.status(200).json({ message: "Contraseña actualizada exitosamente" });
+  } catch (error) {
+    res.status(500).json({ message: "Error al cambiar la contraseña", error });
+  }
+};
+
+export const forgotPassword = async (
+  req: Request,
+  res: Response,
+): Promise<void> => {
+  try {
+    const { email } = req.body;
+    const user = await User.findOne({ email });
+
+    if (!user) {
+      // Por seguridad, no decimos si el email existe o no, damos el mismo mensaje
+      res.status(200).json({
+        message: "Si el correo existe, se enviará un enlace de recuperación.",
+      });
+      return;
+    }
+
+    // Generar un token aleatorio seguro
+    const resetToken = crypto.randomBytes(32).toString("hex");
+
+    // Guardar el token hasheado en la base de datos (por seguridad extra) y darle 1 hora de vida
+    user.resetPasswordToken = crypto
+      .createHash("sha256")
+      .update(resetToken)
+      .digest("hex");
+    user.resetPasswordExpire = new Date(Date.now() + 60 * 60 * 1000); // 1 hora
+    await user.save();
+
+    // Enviar el token original sin hashear por correo
+    await sendPasswordResetEmail(user.email, resetToken);
+
+    res.status(200).json({
+      message: "Si el correo existe, se enviará un enlace de recuperación.",
+    });
+  } catch (error) {
+    res.status(500).json({ message: "Error al procesar la solicitud", error });
+  }
+};
+
+export const resetPassword = async (
+  req: Request,
+  res: Response,
+): Promise<void> => {
+  try {
+    const { token } = req.params;
+    const { newPassword } = req.body;
+
+    // Hasheamos el token que viene de la URL para compararlo con el de la base de datos
+    const hashedToken = crypto.createHash("sha256").update(token).digest("hex");
+
+    // Buscamos al usuario que tenga ese token y que no haya expirado
+    const user = await User.findOne({
+      resetPasswordToken: hashedToken,
+      resetPasswordExpire: { $gt: Date.now() }, // $gt = Greater Than (Mayor a ahora)
+    });
+
+    if (!user) {
+      res.status(400).json({ message: "El token es inválido o ha expirado" });
+      return;
+    }
+
+    // Encriptar y guardar la nueva contraseña
+    const salt = await bcrypt.genSalt(10);
+    user.password = await bcrypt.hash(newPassword, salt);
+
+    // Limpiar los campos de recuperación para que el token no se pueda reusar
+    user.resetPasswordToken = undefined;
+    user.resetPasswordExpire = undefined;
+    await user.save();
+
+    res.status(200).json({
+      message:
+        "Contraseña restablecida exitosamente. Ya puedes iniciar sesión.",
+    });
+  } catch (error) {
+    res
+      .status(500)
+      .json({ message: "Error al restablecer la contraseña", error });
   }
 };

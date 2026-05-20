@@ -18,6 +18,8 @@ export interface IUser extends Document {
   role: UserRole;
   company: Types.ObjectId;
   active: boolean;
+  resetPasswordToken?: string;
+  resetPasswordExpire?: Date;
 }
 
 const userSchema = new Schema<IUser>(
@@ -32,6 +34,8 @@ const userSchema = new Schema<IUser>(
     },
     company: { type: Schema.Types.ObjectId, ref: "Company", required: true },
     active: { type: Boolean, default: true },
+    resetPasswordToken: { type: String },
+    resetPasswordExpire: { type: Date },
   },
   { timestamps: true },
 );

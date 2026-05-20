@@ -13,6 +13,7 @@ import ClientsPage from "./pages/ClientsPage";
 import HistoryPage from "./pages/HistoryPage";
 import PreventivePage from "./pages/PreventivePage";
 import EmployeePage from "./pages/EmployeePage";
+import ResetPasswordPage from "./pages/ResetPasswordPage";
 
 function App() {
   const { isAuthenticated } = useAuthStore();
@@ -48,6 +49,7 @@ function App() {
             )
           }
         />
+        <Route path="/reset-password/:token" element={<ResetPasswordPage />} />
 
         {/* Rutas Privadas. Si no está logueado, cualquier ruta privada lo manda al login */}
         <Route

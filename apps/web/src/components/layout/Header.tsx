@@ -6,15 +6,18 @@ import {
   LogOut,
   Building2,
   ShieldCheck,
+  KeyRound,
 } from "lucide-react";
 import { useAuthStore } from "../../store/useAuthStore";
 import { useNavigate } from "react-router-dom";
+import ChangePasswordModal from "../auth/ChangePasswordModal";
 
 const Header = () => {
   const { user, logout } = useAuthStore();
   const navigate = useNavigate();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
+  const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
 
   // Cerrar el menú si se hace clic fuera de él
   useEffect(() => {
@@ -100,6 +103,16 @@ const Header = () => {
 
               <div className="border-t border-gray-100 mt-1">
                 <button
+                  onClick={() => {
+                    setIsPasswordModalOpen(true);
+                    setIsMenuOpen(false); // Cerramos el dropdown
+                  }}
+                  className="w-full text-left px-4 py-3 text-sm text-gray-700 font-bold flex items-center hover:bg-gray-50 transition-colors border-b border-gray-100"
+                >
+                  <KeyRound className="w-4 h-4 mr-3 text-gray-500" />
+                  CAMBIAR CONTRASEÑA
+                </button>
+                <button
                   onClick={handleLogout}
                   className="w-full text-left px-4 py-3 text-sm text-red-600 font-bold flex items-center hover:bg-red-50 transition-colors"
                 >
@@ -111,6 +124,10 @@ const Header = () => {
           )}
         </div>
       </div>
+      <ChangePasswordModal
+        isOpen={isPasswordModalOpen}
+        onClose={() => setIsPasswordModalOpen(false)}
+      />
     </header>
   );
 };

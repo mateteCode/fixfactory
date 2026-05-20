@@ -3,6 +3,7 @@ import api from "../api/axios";
 import { useAuthStore } from "../store/useAuthStore";
 import { useNavigate } from "react-router-dom";
 import { Lock, Mail, Loader2 } from "lucide-react";
+import ForgotPasswordModal from "../components/auth/ForgotPasswordModal";
 
 const LoginPage = () => {
   const [email, setEmail] = useState("");
@@ -12,6 +13,7 @@ const LoginPage = () => {
 
   const login = useAuthStore((state) => state.login);
   const navigate = useNavigate();
+  const [isForgotModalOpen, setIsForgotModalOpen] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -82,6 +84,15 @@ const LoginPage = () => {
                 placeholder="••••••••"
                 required
               />
+              <div className="text-right mt-1">
+                <button
+                  type="button"
+                  onClick={() => setIsForgotModalOpen(true)}
+                  className="text-[10px] font-bold text-blue-600 hover:underline uppercase"
+                >
+                  ¿Olvidaste tu contraseña?
+                </button>
+              </div>
             </div>
           </div>
 
@@ -98,6 +109,10 @@ const LoginPage = () => {
           </button>
         </form>
       </div>
+      <ForgotPasswordModal
+        isOpen={isForgotModalOpen}
+        onClose={() => setIsForgotModalOpen(false)}
+      />
     </div>
   );
 };
