@@ -6,6 +6,7 @@ import {
   Tablet,
   Wrench,
   PackageSearch,
+  Image as ImageIcon 
 } from "lucide-react";
 import { useIncidentDetail } from "../../hooks/useIncidentDetail";
 
@@ -15,21 +16,23 @@ interface Props {
 }
 
 const IncidentDetailModal = ({ incidentId, onClose }: Props) => {
-  const { incident, spareParts, isLoading } = useIncidentDetail(incidentId);
+  const { incident, spareParts, isLoading, error } = useIncidentDetail(incidentId);
 
   if (!incidentId) return null;
 
-  // Función para agrupar los repuestos por estado
-  const groupedParts = spareParts.reduce(
+  // 1. Agrupamos los repuestos
+  const groupedParts = (Array.isArray(spareParts) ? spareParts : []).reduce(
     (acc, part) => {
-      const status = part.status;
+      const status = part.status || "Desconocido";
       if (!acc[status]) acc[status] = [];
       acc[status].push(part);
       return acc;
     },
     {} as Record<string, any[]>,
   );
-  console.log(groupedParts);
+
+  // 2. SOLUCIÓN: Creamos una variable con el tipo estricto ANTES del return (HTML)
+  const groupedEntries: [string, any[]][] = Object.entries(groupedParts);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
@@ -48,7 +51,13 @@ const IncidentDetailModal = ({ incidentId, onClose }: Props) => {
         </div>
 
         <div className="p-6 overflow-y-auto flex-1 space-y-6">
-          {isLoading || !incident ? (
+          {error ? (
+            <div className="flex flex-col items-center justify-center py-10 text-red-500">
+              <p className="text-lg font-bold">No se pudo cargar</p>
+              <p className="text-sm text-red-400 mt-2 bg-red-50 p-3 rounded">{error}</p>
+              <p className="text-xs text-gray-400 mt-4">Verifica en consola (F12) o prueba con un rol de Administrador/Técnico.</p>
+            </div>
+          ) : isLoading || !incident ? (
             <div className="flex flex-col items-center justify-center py-10 text-gray-500">
               <Loader2 className="w-8 h-8 animate-spin mb-2" />
               <p className="text-sm font-bold animate-pulse">
@@ -83,7 +92,7 @@ const IncidentDetailModal = ({ incidentId, onClose }: Props) => {
                 </div>
               </div>
 
-              {/* SECCIÓN 2: El Problema y Diagnóstico */}
+              {/* SECCIÓN 2: El Problema, Evidencia y Diagnóstico */}
               <div className="space-y-4">
                 <div>
                   <p className="text-xs font-bold text-gray-700 uppercase mb-1">
@@ -93,6 +102,22 @@ const IncidentDetailModal = ({ incidentId, onClose }: Props) => {
                     {incident.description}
                   </div>
                 </div>
+
+                {/* Mostrar la evidencia fotográfica si existe */}
+                {incident.imageUrl && (
+                  <div>
+                    <p className="text-xs font-bold text-gray-700 uppercase mb-1 flex items-center">
+                      <ImageIcon className="w-3 h-3 mr-1" /> Evidencia Fotográfica
+                    </p>
+                    <div className="bg-gray-50 border border-gray-200 p-2 rounded flex justify-center mt-1">
+                      <img 
+                        src={incident.imageUrl} 
+                        alt="Evidencia de la falla" 
+                        className="max-h-64 object-contain rounded shadow-sm border border-gray-200"
+                      />
+                    </div>
+                  </div>
+                )}
 
                 {incident.technicalDiagnosis && (
                   <div>
@@ -106,11 +131,10 @@ const IncidentDetailModal = ({ incidentId, onClose }: Props) => {
                 )}
               </div>
 
-              {/* SECCIÓN 3: Repuestos Solicitados (Agrupados) */}
+              {/* SECCIÓN 3: Repuestos Solicitados */}
               <div>
                 <p className="text-xs font-bold text-gray-700 uppercase mb-3 flex items-center border-b pb-2">
-                  <PackageSearch className="w-4 h-4 mr-1" /> Piezas y Repuestos
-                  Involucrados
+                  <PackageSearch className="w-4 h-4 mr-1" /> Piezas y Repuestos Involucrados
                 </p>
 
                 {spareParts.length === 0 ? (
@@ -119,7 +143,8 @@ const IncidentDetailModal = ({ incidentId, onClose }: Props) => {
                   </p>
                 ) : (
                   <div className="space-y-4">
-                    {Object.entries(groupedParts).map(([status, parts]) => (
+                    {/* 3. SOLUCIÓN: Usamos la variable limpia aquí */}
+                    {groupedEntries.map(([status, parts]) => (
                       <div
                         key={status}
                         className="border border-gray-200 rounded overflow-hidden"
