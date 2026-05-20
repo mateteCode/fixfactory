@@ -1,6 +1,7 @@
 import { Router } from "express";
 import {
   getUsers,
+  createUser,
   deactivateUser,
   deleteUserPhysical,
 } from "../controllers/user.controller.js";
@@ -23,5 +24,7 @@ router.patch(
   deactivateUser,
 );
 router.delete("/:id", authorize([UserRole.ADMIN]), deleteUserPhysical); // El físico solo el ADMIN
+
+router.post("/", authorize([UserRole.ADMIN, UserRole.ASISTENTE]), createUser);
 
 export default router;

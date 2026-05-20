@@ -12,6 +12,7 @@ import PurchaseManagementPage from "./pages/PurchaseManagementPage";
 import ClientsPage from "./pages/ClientsPage";
 import HistoryPage from "./pages/HistoryPage";
 import PreventivePage from "./pages/PreventivePage";
+import EmployeePage from "./pages/EmployeePage";
 
 function App() {
   const { isAuthenticated } = useAuthStore();
@@ -72,6 +73,7 @@ function App() {
 
           {/* Gestión de Compras */}
           <Route path="/compras" element={<PurchaseManagementPage />} />
+          <Route path="/personal" element={<EmployeePage />} />
         </Route>
 
         <Route path="*" element={<Navigate to="/dashboard" replace />} />
