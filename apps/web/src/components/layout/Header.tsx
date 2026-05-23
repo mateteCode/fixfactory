@@ -11,6 +11,7 @@ import {
 import { useAuthStore } from "../../store/useAuthStore";
 import { useNavigate } from "react-router-dom";
 import ChangePasswordModal from "../auth/ChangePasswordModal";
+import QRScannerModal from "../common/QRScannerModal";
 
 const Header = () => {
   const { user, logout } = useAuthStore();
@@ -18,6 +19,7 @@ const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
+  const [isScannerOpen, setIsScannerOpen] = useState(false);
 
   // Cerrar el menú si se hace clic fuera de él
   useEffect(() => {
@@ -49,7 +51,10 @@ const Header = () => {
 
       {/* Acciones Derecha */}
       <div className="flex items-center space-x-6">
-        <button className="flex items-center space-x-2 bg-gray-600 text-white px-4 py-2 rounded text-xs font-bold hover:bg-gray-700 transition-colors shadow-sm">
+        <button
+          onClick={() => setIsScannerOpen(true)}
+          className="flex items-center space-x-2 bg-gray-600 text-white px-4 py-2 rounded text-xs font-bold hover:bg-gray-700 transition-colors shadow-sm"
+        >
           <QrCode className="w-4 h-4" />
           <span>ESCANEAR QR</span>
         </button>
@@ -127,6 +132,10 @@ const Header = () => {
       <ChangePasswordModal
         isOpen={isPasswordModalOpen}
         onClose={() => setIsPasswordModalOpen(false)}
+      />
+      <QRScannerModal
+        isOpen={isScannerOpen}
+        onClose={() => setIsScannerOpen(false)}
       />
     </header>
   );
