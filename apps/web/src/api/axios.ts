@@ -15,4 +15,21 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
+api.interceptors.response.use(
+  (response) => {
+    // Si la respuesta es exitosa, la dejamos pasar
+    return response;
+  },
+  (error) => {
+    // Si el backend devuelve un 401 (No Autorizado)
+    if (error.response && error.response.status === 401) {
+      console.warn("Sesión expirada. Redirigiendo al login...");
+      useAuthStore.getState().logout();
+      window.location.href = "/login";
+    }
+    // Rechazamos la promesa para que los bloques catch(err) de tus componentes sigan funcionando
+    return Promise.reject(error);
+  },
+);
+
 export default api;
