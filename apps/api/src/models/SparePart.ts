@@ -1,30 +1,36 @@
-import { Schema, model, Document, Types, type ObjectId } from "mongoose";
+// src/models/SparePart.ts
+import mongoose, { Schema, Document, Types } from "mongoose";
 
 export interface ISparePart extends Document {
-  modelName: string;
-  brand: string;
-  description: string;
-  stockQuantity: number;
-  price: number;
-  compatibleMachines: Types.ObjectId[]; // Máquinas en las que se puede usar
+  catalogRef: Types.ObjectId;
   company: Types.ObjectId;
-  active: boolean; // Para el borrado lógico
+  internalCode?: string; // SKU interno opcional (Ej: REP-001)
+  stockQuantity: number;
+  minStock: number; // ¡Nuevo! Para generar alertas de re-compra futuras
+  price: number;
+  location?: string; // Ej: "Estantería A3"
+  active: boolean;
+  createdAt: Date;
 }
 
 const sparePartSchema = new Schema<ISparePart>(
   {
-    modelName: { type: String, required: true },
-    brand: { type: String, required: true },
-    description: { type: String, required: true },
-    stockQuantity: { type: Number, default: 0, min: 0 },
-    price: { type: Number, default: 0, min: 0 },
-    compatibleMachines: [{ type: Schema.Types.ObjectId, ref: "Machine" }],
+    catalogRef: {
+      type: Schema.Types.ObjectId,
+      ref: "SparePartPattern",
+      required: true,
+    },
     company: {
       type: Schema.Types.ObjectId,
       ref: "Company",
       required: true,
       index: true,
     },
+    internalCode: { type: String, uppercase: true, trim: true },
+    stockQuantity: { type: Number, default: 0, min: 0 },
+    minStock: { type: Number, default: 1, min: 0 },
+    price: { type: Number, default: 0, min: 0 },
+    location: { type: String },
     active: { type: Boolean, default: true },
   },
   {
@@ -32,4 +38,6 @@ const sparePartSchema = new Schema<ISparePart>(
   },
 );
 
-export default model<ISparePart>("SparePart", sparePartSchema);
+sparePartSchema.index({ catalogRef: 1, company: 1 }, { unique: true });
+
+export default mongoose.model<ISparePart>("SparePart", sparePartSchema);

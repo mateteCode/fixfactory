@@ -1,42 +1,59 @@
-import { Schema, model, Document, Types } from "mongoose";
+import mongoose, { Schema, model, Document, Types } from "mongoose";
+
+export enum MachineStatus {
+  OPERATIVA = "Operativa",
+  MANTENIMIENTO = "Mantenimiento",
+  EN_FALLA = "En Falla",
+  APAGADA = "Apagada",
+  NO_INSTALADA = "No Instalada",
+}
 
 // Interfaz para definir la estructura de la Máquina en el código
 export interface IMachine extends Document {
-  code: string;
-  name: string;
-  location: string;
-  productionLine: string;
-  installationDate: Date;
-  technicalManualUrl?: string;
-  company: Types.ObjectId;
-  status?: "Operativa" | "Mantenimiento" | "En Falla" | "Apagada";
-  //TODO: Agregar type: tipo de maquinaria, status: Operativa, Mantenimiento, En Falla
+  catalogRef: mongoose.Types.ObjectId;
+  company: mongoose.Types.ObjectId;
+  internalTag: string;
+  status: MachineStatus;
+  productionLine?: string;
+  location?: string;
+  installationDate?: Date;
+  purchasePrice?: number;
+  active: boolean;
+  createdAt: Date;
 }
 
 // Esquema de MongoDB siguiendo el requerimiento RF-01
-const machineSchema = new Schema<IMachine>(
+const MachineSchema = new Schema<IMachine>(
   {
-    code: { type: String, required: true, unique: true }, //TODO: Hacer que la el codigo sea único solo para la empresa
-    name: { type: String, required: true },
-    location: { type: String, required: true },
-    productionLine: { type: String, required: true },
-    installationDate: { type: Date, required: true },
-    technicalManualUrl: { type: String },
-    company: {
+    catalogRef: {
       type: Schema.Types.ObjectId,
-      ref: "Company",
+      ref: "MachinePattern",
       required: true,
-      index: true,
     },
+    company: { type: Schema.Types.ObjectId, ref: "Company", required: true },
+    internalTag: { type: String, required: true, uppercase: true, trim: true },
     status: {
       type: String,
-      enum: ["Operativa", "Mantenimiento", "En Falla"],
-      default: "Operativa",
+      enum: Object.values(MachineStatus),
+      default: MachineStatus.OPERATIVA,
     },
+    productionLine: { type: String },
+    location: { type: String },
+    installationDate: { type: Date },
+    purchasePrice: { type: Number, min: 0 },
+    active: { type: Boolean, default: true, required: true },
   },
-  {
-    timestamps: true,
-  },
+  { timestamps: true },
 );
 
-export default model<IMachine>("Machine", machineSchema);
+MachineSchema.pre("save", function () {
+  const machine = this as IMachine;
+
+  if (!machine.installationDate) {
+    machine.status = MachineStatus.NO_INSTALADA;
+  }
+});
+
+MachineSchema.index({ company: 1, internalTag: 1 }, { unique: true });
+
+export default mongoose.model<IMachine>("Machine", MachineSchema);

@@ -4,11 +4,32 @@ import api from "../api/axios";
 
 export interface Machine {
   _id: string;
+  internalTag: string;
   name: string;
-  code: string;
-  type: string;
-  status: "Operativa" | "En Falla" | "Mantenimiento";
+  brand: string;
+  modelCode: string;
+  status:
+    | "Operativa"
+    | "En Falla"
+    | "Mantenimiento"
+    | "Apagada"
+    | "No Instalada";
+  productionLine?: string;
   location?: string;
+  installationDate?: string;
+
+  // Nivel 3 (Físico)
+  purchasePrice?: number;
+  createdAt?: string;
+
+  // Nivel 1 y 2 (Catálogo y Perfil)
+  technicalSpecs?: string;
+  operationalNotes?: string;
+  imageUrl?: string;
+  images?: string[];
+  manuals?: string[];
+  isVerified?: boolean;
+  isPrivate?: boolean;
 }
 
 export const useMachines = () => {

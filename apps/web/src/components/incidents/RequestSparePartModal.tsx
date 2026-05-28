@@ -27,11 +27,13 @@ const RequestSparePartModal = ({
   if (!isOpen) return null;
 
   // Filtramos: repuestos universales o compatibles con esta máquina en particular
-  const compatibleParts = spareParts.filter(
-    (part) =>
-      part.compatibleMachines.length === 0 ||
-      part.compatibleMachines.some((m) => m._id === machineId),
-  );
+  const compatibleParts = spareParts.filter((part) => {
+    // Creamos un fallback seguro por si viene undefined de la base de datos
+    const machines = part.compatibleMachines || [];
+    return (
+      machines.length === 0 || machines.some((m: any) => m._id === machineId)
+    );
+  });
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -88,7 +90,7 @@ const RequestSparePartModal = ({
                   </option>
                   {compatibleParts.map((part) => (
                     <option key={part._id} value={part._id}>
-                      {part.modelName} - {part.brand} (Stock:{" "}
+                      {part.partNumber} - {part.brand} (Stock:{" "}
                       {part.stockQuantity})
                     </option>
                   ))}

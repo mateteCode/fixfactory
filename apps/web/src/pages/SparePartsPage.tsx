@@ -1,27 +1,36 @@
 import { useState } from "react";
 import { useSpareParts, type SparePart } from "../hooks/useSpareParts";
 import { DataTable } from "../components/common/DataTable";
-import { Package, Plus, AlertCircle } from "lucide-react";
+import { Package, Plus, AlertCircle, Eye, Layers } from "lucide-react";
 import { useAuthStore } from "../store/useAuthStore";
 import AddSparePartModal from "../components/spareParts/AddSparePartModal";
 import AdjustStockModal from "../components/spareParts/AdjustStockModal";
 
+import { useNavigate } from "react-router-dom";
+
 const SparePartsPage = () => {
+  const navigate = useNavigate();
   const { spareParts, isLoading, refetch } = useSpareParts();
+
   const user = useAuthStore((state) => state.user);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [selectedPartForStock, setSelectedPartForStock] =
     useState<SparePart | null>(null);
 
-  // Solo ADMIN, MANTENIMIENTO o COMPRAS deberían poder agregar piezas al catálogo
   const canManageCatalog = ["ADMIN", "MANTENIMIENTO", "COMPRAS"].includes(
     user?.role || "",
   );
 
+  // Función exclusiva para abrir el modal de stock sin disparar el click de la fila
+  const handleOpenStockModal = (e: React.MouseEvent, part: SparePart) => {
+    e.stopPropagation();
+    setSelectedPartForStock(part);
+  };
+
   const columns = [
-    { header: "Modelo", accessor: "modelName" as keyof SparePart },
+    { header: "N° Parte", accessor: "partNumber" as keyof SparePart },
     { header: "Marca", accessor: "brand" as keyof SparePart },
-    { header: "Descripción", accessor: "description" as keyof SparePart },
+    { header: "Repuesto", accessor: "name" as keyof SparePart },
     {
       header: "Stock",
       accessor: (item: SparePart) => (
@@ -29,7 +38,7 @@ const SparePartsPage = () => {
           className={`px-2 py-1 rounded-full text-xs font-bold ${
             item.stockQuantity === 0
               ? "bg-red-100 text-red-700"
-              : item.stockQuantity <= 5
+              : item.stockQuantity <= (item.minStock || 5)
                 ? "bg-yellow-100 text-yellow-700"
                 : "bg-green-100 text-green-700"
           }`}
@@ -43,13 +52,32 @@ const SparePartsPage = () => {
       accessor: (item: SparePart) => `$${item.price.toFixed(2)}`,
     },
     {
-      header: "Compatibilidad",
+      header: "Acciones",
       accessor: (item: SparePart) => (
-        <span className="text-xs text-gray-500">
-          {item.compatibleMachines.length > 0
-            ? `${item.compatibleMachines.length} máquina(s)`
-            : "Universal"}
-        </span>
+        <div className="flex items-center space-x-2">
+          {/* Ir al detalle completo */}
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              navigate(`/repuestos/${item._id}`);
+            }}
+            className="p-1.5 text-gray-500 hover:text-gray-800 hover:bg-gray-200 rounded transition-colors"
+            title="Ver expediente completo"
+          >
+            <Eye size={16} />
+          </button>
+
+          {/* Ajustar stock manualmente */}
+          {canManageCatalog && (
+            <button
+              onClick={(e) => handleOpenStockModal(e, item)}
+              className="p-1.5 text-blue-600 hover:text-blue-800 hover:bg-blue-100 rounded transition-colors"
+              title="Ajustar Stock"
+            >
+              <Layers size={16} />
+            </button>
+          )}
+        </div>
       ),
     },
   ];
@@ -92,9 +120,7 @@ const SparePartsPage = () => {
           <DataTable
             columns={columns}
             data={spareParts}
-            onRowClick={(item) =>
-              canManageCatalog && setSelectedPartForStock(item)
-            }
+            onRowClick={(item) => navigate(`/repuestos/${item._id}`)}
           />
         )}
       </div>

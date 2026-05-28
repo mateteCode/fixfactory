@@ -3,6 +3,7 @@ import { sendIssueNotification } from "../services/mail.service.js";
 import Machine from "../models/Machine.js";
 import Issue from "../models/Issue.js";
 import { IssueStatus } from "../models/Issue.js";
+import { UserRole } from "../models/User.js";
 
 // Helper local para verificar y restablecer la máquina si corresponde
 const syncMachineStatus = async (machineId: any, companyId: any) => {
@@ -94,7 +95,12 @@ export const getIssues = async (req: Request, res: Response): Promise<void> => {
 
     // Buscamos incidencias que pertenezcan a ese ID de objeto
     const issues = await Issue.find({ company: companyId })
-      .populate("machine", "name code")
+      .populate({
+        path: "machine",
+        populate: { path: "catalogRef" },
+      })
+      .populate("reportedBy", "name email")
+      .populate("assignedTo", "name email")
       .sort({ createdAt: -1 });
 
     res.status(200).json(issues);
@@ -110,12 +116,16 @@ export const getIssueById = async (
 ): Promise<void> => {
   try {
     const companyId = (req as any).companyId;
-    const issue = await Issue.findById({
-      _id: req.params.id,
+    const issue = await Issue.findOne({
+      _id: req.params.id as string,
       company: companyId,
     })
-      .populate("machine")
-      .populate("reportedBy", "name email");
+      .populate({
+        path: "machine",
+        populate: { path: "catalogRef" },
+      })
+      .populate("reportedBy", "name email")
+      .populate("assignedTo", "name email");
 
     if (!issue) {
       res
@@ -206,5 +216,40 @@ export const closeIssue = async (
     res.status(200).json(updatedIssue);
   } catch (error) {
     res.status(400).json({ message: "Error al cerrar la incidencia", error });
+  }
+};
+
+// El jefe de mantenimiento asigna la tarea/repación a un técnico o si mismo
+export const assignIssue = async (
+  req: Request,
+  res: Response,
+): Promise<void> => {
+  try {
+    const { issueId, technicianId } = req.body;
+    const user = (req as any).user;
+
+    // Validación de Roles (Solo ADMIN o MANTENIMIENTO)
+    if (![UserRole.ADMIN, UserRole.MANTENIMIENTO].includes(user.role)) {
+      res
+        .status(403)
+        .json({ message: "No tienes permisos para asignar tareas." });
+      return;
+    }
+
+    // Actualizar la incidencia
+    const updatedIssue = await Issue.findOneAndUpdate(
+      { _id: issueId, company: (req as any).companyId },
+      { assignedTo: technicianId, status: IssueStatus.EN_PROCESO },
+      { new: true },
+    );
+
+    if (!updatedIssue) {
+      res.status(404).json({ message: "Incidencia no encontrada." });
+      return;
+    }
+
+    res.status(200).json(updatedIssue);
+  } catch (error) {
+    res.status(500).json({ message: "Error al asignar la tarea." });
   }
 };

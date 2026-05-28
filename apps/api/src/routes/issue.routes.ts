@@ -5,6 +5,7 @@ import {
   getIssueById,
   updateIssue,
   closeIssue,
+  assignIssue,
 } from "../controllers/issue.controller.js";
 import { authenticate } from "../middlewares/auth.middleware.js";
 import { authorize } from "../middlewares/role.middleware.js";
@@ -30,7 +31,15 @@ router.post(
   validateOwnership(Machine, "machine", "body"),
   createIssue,
 );
+
 // Solo el técnico o mantenimiento pueden cambiar estados técnicos
+router.patch(
+  "/assign",
+  authenticate,
+  authorize([UserRole.ADMIN, UserRole.MANTENIMIENTO]),
+  assignIssue,
+);
+
 router.patch(
   "/:id",
   authorize([UserRole.TECNICO, UserRole.MANTENIMIENTO, UserRole.ADMIN]),

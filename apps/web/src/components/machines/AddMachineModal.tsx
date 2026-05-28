@@ -1,5 +1,22 @@
-import React, { useState } from "react";
-import { X, Tablet, Loader2, Calendar, Factory } from "lucide-react";
+import React, { useState, useEffect } from "react";
+import {
+  X,
+  Tablet,
+  Loader2,
+  Calendar,
+  Factory,
+  DollarSign,
+  UploadCloud,
+  FileText,
+  Image as ImageIcon,
+  Cpu,
+  Layers,
+  Tag,
+  MapPin,
+  Trash2,
+  Zap,
+  CloudCheck,
+} from "lucide-react";
 import api from "../../api/axios";
 
 interface Props {
@@ -9,164 +26,701 @@ interface Props {
 }
 
 const AddMachineModal = ({ isOpen, onClose, onSuccess }: Props) => {
-  const [formData, setFormData] = useState({
+  const initialFormState = {
+    brand: "",
+    modelCode: "",
     name: "",
-    code: "",
-    type: "",
-    location: "",
+    internalTag: "",
     status: "Operativa",
-    installationDate: "",
+    location: "",
     productionLine: "",
-  });
+    installationDate: "",
+    purchasePrice: 0,
+    technicalSpecs: "",
+    operationalNotes: "",
+    isPrivate: false,
+  };
+  const [formData, setFormData] = useState(initialFormState);
+
+  const [patterns, setPatterns] = useState<any[]>([]);
+  const [isPatternMatched, setIsPatternMatched] = useState(false);
+
+  // Estados de archivos NUEVOS (para subir desde la PC)
+  const [customImage, setCustomImage] = useState<File | null>(null);
+  const [serviceManuals, setServiceManuals] = useState<File[]>([]);
+  const [images, setImages] = useState<File[]>([]);
+
+  // Estados de archivos HEREDADOS (URLs que ya existen en el catálogo)
+  const [inheritedImageUrl, setInheritedImageUrl] = useState("");
+  const [inheritedManuals, setInheritedManuals] = useState<string[]>([]);
+  const [inheritedImages, setInheritedImages] = useState<string[]>([]);
+
   const [isLoading, setIsLoading] = useState(false);
+  const [uploadStatus, setUploadStatus] = useState("");
+
+  // Cargar patrones cuando se abre el modal
+  useEffect(() => {
+    if (isOpen) {
+      api
+        .get("/machines/patterns")
+        .then((res) => setPatterns(res.data))
+        .catch((err) => console.error("Error cargando patrones", err));
+    } else {
+      // Limpiar formulario y estados al cerrar
+      setFormData(initialFormState);
+      setCustomImage(null);
+      setServiceManuals([]);
+      setImages([]);
+      setInheritedImageUrl("");
+      setInheritedManuals([]);
+      setInheritedImages([]);
+      setIsPatternMatched(false);
+      setUploadStatus("");
+    }
+  }, [isOpen]);
 
   if (!isOpen) return null;
+
+  // Lógica para detectar coincidencia de marca y modelo
+  const handleModelChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newModel = e.target.value;
+
+    const matched = patterns.find(
+      (p) =>
+        p.brand.toLowerCase() === formData.brand.toLowerCase() &&
+        p.modelCode.toLowerCase() === newModel.toLowerCase(),
+    );
+
+    if (matched) {
+      setFormData((prev) => ({
+        ...prev,
+        modelCode: newModel,
+        name: matched.name,
+        technicalSpecs: matched.technicalSpecs || "",
+        operationalNotes: matched.operationalNotes || "",
+      }));
+      setInheritedImageUrl(matched.imageUrl || "");
+      setInheritedManuals(matched.manuals || []);
+      setInheritedImages(matched.images || []);
+      setIsPatternMatched(true);
+    } else {
+      setFormData((prev) => ({ ...prev, modelCode: newModel }));
+      setInheritedImageUrl("");
+      setInheritedManuals([]);
+      setInheritedImages([]);
+      setIsPatternMatched(false);
+    }
+  };
+
+  const uniqueBrands = Array.from(new Set(patterns.map((p) => p.brand)));
+  const availableModels = patterns
+    .filter((p) => p.brand.toLowerCase() === formData.brand.toLowerCase())
+    .map((p) => p.modelCode);
+
+  // Manejadores acumulativos (Nuevos archivos)
+  const handleManualsChange = (files: FileList | null) => {
+    if (!files) return;
+    setServiceManuals((prev) => [...prev, ...Array.from(files)]);
+  };
+
+  const handleImagesChange = (files: FileList | null) => {
+    if (!files) return;
+    setImages((prev) => [...prev, ...Array.from(files)]);
+  };
+
+  // Eliminación de archivos NUEVOS
+  const removeManual = (indexToRemove: number) => {
+    setServiceManuals((prev) => prev.filter((_, idx) => idx !== indexToRemove));
+  };
+
+  const removeImage = (indexToRemove: number) => {
+    setImages((prev) => prev.filter((_, idx) => idx !== indexToRemove));
+  };
+
+  // Eliminación de archivos HEREDADOS
+  const removeInheritedManual = (url: string) => {
+    setInheritedManuals((prev) => prev.filter((u) => u !== url));
+  };
+
+  const removeInheritedImage = (url: string) => {
+    setInheritedImages((prev) => prev.filter((u) => u !== url));
+  };
+
+  const uploadToCloudinary = async (file: File) => {
+    const data = new FormData();
+    const cloudUrl = import.meta.env.VITE_API_CLOUD_URL;
+    const cloudName = import.meta.env.VITE_API_CLOUD_NAME;
+    const uploadPreset = import.meta.env.VITE_API_CLOUD_UPLOAD_PRESET;
+
+    data.append("file", file);
+    data.append("upload_preset", uploadPreset);
+
+    const response = await fetch(`${cloudUrl}/${cloudName}/auto/upload`, {
+      method: "POST",
+      body: data,
+    });
+
+    if (!response.ok) throw new Error(`Error al subir el archivo ${file.name}`);
+    const result = await response.json();
+    return result.secure_url;
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
+
     try {
-      await api.post("/machines", formData);
-      onSuccess(); // Recarga la tabla
-      onClose(); // Cierra el modal
-    } catch (error) {
-      alert("Error al crear la máquina. Verifica si el código ya existe.");
-      console.error("Detalles del error 400:", error.response?.data);
+      // 1. Imagen principal: Prioriza la nueva; si no hay, usa la heredada
+      let mainImageUrl = inheritedImageUrl;
+      if (customImage) {
+        setUploadStatus("Subiendo nueva imagen principal...");
+        mainImageUrl = await uploadToCloudinary(customImage);
+      }
+
+      // 2. Manuales: Combina heredados con nuevos
+      const finalManuals = [...inheritedManuals];
+      if (serviceManuals.length > 0) {
+        setUploadStatus(
+          `Subiendo nuevos manuales (${serviceManuals.length})...`,
+        );
+        for (const file of serviceManuals) {
+          const url = await uploadToCloudinary(file);
+          finalManuals.push(url);
+        }
+      }
+
+      // 3. Galería: Combina heredadas con nuevas
+      const finalImages = [...inheritedImages];
+      if (images.length > 0) {
+        setUploadStatus(
+          `Subiendo fotos nuevas a la galería (${images.length})...`,
+        );
+        for (const file of images) {
+          const url = await uploadToCloudinary(file);
+          finalImages.push(url);
+        }
+      }
+
+      setUploadStatus("Guardando configuración en planta...");
+      const finalPayload = {
+        ...formData,
+        customImageUrl: mainImageUrl,
+        serviceManuals: finalManuals,
+        images: finalImages,
+      };
+
+      await api.post("/machines", finalPayload);
+      onSuccess();
+      onClose();
+    } catch (error: any) {
+      alert(error.message || "Error al procesar la solicitud.");
     } finally {
       setIsLoading(false);
+      setUploadStatus("");
     }
+  };
+
+  const formatFileSize = (bytes: number) => {
+    if (bytes === 0) return "0 Bytes";
+    const k = 1024;
+    const sizes = ["Bytes", "KB", "MB"];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + " " + sizes[i];
   };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-      <div className="bg-white w-full max-w-md rounded-lg shadow-2xl border border-gray-200 overflow-hidden">
-        <div className="bg-[#F5F5F5] px-6 py-4 border-b border-gray-300 flex justify-between items-center">
+      <div className="bg-white w-full max-w-5xl rounded-lg shadow-2xl border border-gray-200 overflow-hidden flex flex-col max-h-[90vh]">
+        {/* CABECERA */}
+        <div className="bg-[#F5F5F5] px-6 py-4 border-b flex justify-between items-center shrink-0">
           <h3 className="text-gray-700 font-bold flex items-center text-sm uppercase tracking-wider">
-            <Tablet className="w-4 h-4 mr-2 text-[#7A7A7A]" />
-            Nueva Máquina
+            <Tablet className="w-4 h-4 mr-2 text-gray-500" /> Nueva Máquina con
+            Documentación Física
           </h3>
           <button
             onClick={onClose}
-            className="text-gray-400 hover:text-gray-600"
+            className="text-gray-400 hover:text-gray-600 transition-colors"
           >
             <X size={20} />
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-6 space-y-4">
-          {/* Nombre y Código */}
-          <div className="grid grid-cols-2 gap-4">
-            <div className="col-span-2">
-              <label className="block text-[10px] font-bold text-gray-500 uppercase mb-1">
-                Nombre del Equipo
-              </label>
-              <input
-                required
-                type="text"
-                className="w-full px-3 py-2 border border-gray-300 rounded text-sm outline-none"
-                onChange={(e) =>
-                  setFormData({ ...formData, name: e.target.value })
-                }
-              />
-            </div>
-            <div>
-              <label className="block text-[10px] font-bold text-gray-500 uppercase mb-1">
-                Código
-              </label>
-              <input
-                required
-                type="text"
-                className="w-full px-3 py-2 border border-gray-300 rounded text-sm outline-none"
-                onChange={(e) =>
-                  setFormData({ ...formData, code: e.target.value })
-                }
-              />
-            </div>
-            <div>
-              <label className="block text-[10px] font-bold text-gray-500 uppercase mb-1">
-                Tipo
-              </label>
-              <input
-                required
-                type="text"
-                className="w-full px-3 py-2 border border-gray-300 rounded text-sm outline-none"
-                onChange={(e) =>
-                  setFormData({ ...formData, type: e.target.value })
-                }
-              />
-            </div>
-          </div>
+        <form
+          onSubmit={handleSubmit}
+          className="p-6 overflow-y-auto flex-1 space-y-6"
+        >
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 h-full">
+            {/* COLUMNA IZQUIERDA: Formulario Unificado Compacto */}
+            <div className="bg-gray-50 p-2 rounded-lg border border-gray-200 relative overflow-hidden flex flex-col shadow-sm">
+              <div className="flex justify-between items-end border-b border-gray-200 pb-3 mb-2 shrink-0">
+                <p className="text-xs font-bold text-gray-600 uppercase tracking-wider">
+                  Datos Generales y Ubicación
+                </p>
+                {isPatternMatched && (
+                  <span className="flex items-center text-[9px] font-bold text-green-700 bg-green-100 px-2.5 py-0.5 rounded-full animate-fadeIn border border-green-200">
+                    <Zap className="w-3 h-3 mr-1 fill-green-600" />
+                    AUTOCOMPLETADO
+                  </span>
+                )}
+              </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-[10px] font-bold text-gray-500 uppercase mb-1">
-                Fecha Instalación
-              </label>
-              <div className="relative">
-                <Calendar className="absolute left-2 top-2.5 text-gray-400 w-3 h-3" />
-                <input
-                  required
-                  type="date"
-                  className="w-full pl-8 pr-3 py-2 border border-gray-300 rounded text-sm outline-none"
-                  onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      installationDate: e.target.value,
-                    })
-                  }
-                />
+              <datalist id="brands-list">
+                {uniqueBrands.map((b) => (
+                  <option key={b} value={b} />
+                ))}
+              </datalist>
+              <datalist id="models-list">
+                {availableModels.map((m) => (
+                  <option key={m} value={m} />
+                ))}
+              </datalist>
+
+              {/* Una sola grilla para todo el formulario */}
+              <div className="grid grid-cols-2 gap-2 flex-1 overflow-y-auto pr-2 pb-2">
+                {/* 1. Catálogo */}
+                <div>
+                  <label className="block text-[10px] font-bold text-gray-500 uppercase mb-1">
+                    Marca *
+                  </label>
+                  <div className="relative">
+                    <Cpu className="absolute left-3 top-2.5 w-4 h-4 text-gray-400" />
+                    <input
+                      required
+                      list="brands-list"
+                      type="text"
+                      placeholder="Ej: Siemens"
+                      value={formData.brand}
+                      className={`w-full pl-9 pr-3 py-2 border rounded text-sm bg-white outline-none transition-colors ${isPatternMatched ? "border-green-400 bg-green-50/30" : "focus:border-gray-500"}`}
+                      onChange={(e) => {
+                        setFormData({ ...formData, brand: e.target.value });
+                        setIsPatternMatched(false);
+                      }}
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-[10px] font-bold text-gray-500 uppercase mb-1">
+                    Modelo *
+                  </label>
+                  <div className="relative">
+                    <Layers className="absolute left-3 top-2.5 w-4 h-4 text-gray-400" />
+                    <input
+                      required
+                      list="models-list"
+                      type="text"
+                      placeholder="Ej: S7-1200"
+                      value={formData.modelCode}
+                      className={`w-full pl-9 pr-3 py-2 border rounded text-sm bg-white outline-none transition-colors ${isPatternMatched ? "border-green-400 bg-green-50/30" : "focus:border-gray-500"}`}
+                      onChange={handleModelChange}
+                    />
+                  </div>
+                </div>
+                <div className="col-span-2">
+                  <label className="block text-[10px] font-bold text-gray-500 uppercase mb-1">
+                    Nombre del Equipo *
+                  </label>
+                  <input
+                    required
+                    type="text"
+                    placeholder="Ej: PLC Principal"
+                    value={formData.name}
+                    className={`w-full px-3 py-2 border rounded text-sm bg-white outline-none transition-colors ${isPatternMatched ? "border-green-400 bg-green-50/30" : "focus:border-gray-500"}`}
+                    onChange={(e) =>
+                      setFormData({ ...formData, name: e.target.value })
+                    }
+                  />
+                </div>
+
+                <div className="col-span-2 border-t border-gray-100 my-0"></div>
+
+                {/* 2. Planta */}
+                <div>
+                  <label className="block text-[10px] font-bold text-blue-700 uppercase mb-1">
+                    TAG Interno *
+                  </label>
+                  <div className="relative">
+                    <Tag className="absolute left-3 top-2.5 w-4 h-4 text-blue-500" />
+                    <input
+                      required
+                      type="text"
+                      placeholder="Ej: TAB-01"
+                      className="w-full pl-9 pr-3 py-2 border border-blue-300 rounded text-sm bg-blue-50/30 outline-none focus:border-blue-500 font-mono font-bold uppercase"
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          internalTag: e.target.value,
+                        })
+                      }
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-[10px] font-bold text-gray-500 uppercase mb-1">
+                    Línea Prod. *
+                  </label>
+                  <div className="relative">
+                    <Factory className="absolute left-3 top-2.5 w-4 h-4 text-gray-400" />
+                    <input
+                      required
+                      type="text"
+                      placeholder="Ej: Línea 1"
+                      className="w-full pl-9 pr-3 py-2 border rounded text-sm bg-white outline-none focus:border-gray-500"
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          productionLine: e.target.value,
+                        })
+                      }
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-[10px] font-bold text-gray-500 uppercase mb-1">
+                    Ubicación
+                  </label>
+                  <div className="relative">
+                    <MapPin className="absolute left-3 top-2.5 w-4 h-4 text-gray-400" />
+                    <input
+                      type="text"
+                      placeholder="Ej: Sector A"
+                      className="w-full pl-9 pr-3 py-2 border rounded text-sm bg-white outline-none focus:border-gray-500"
+                      onChange={(e) =>
+                        setFormData({ ...formData, location: e.target.value })
+                      }
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-[10px] font-bold text-gray-500 uppercase mb-1">
+                    Costo (USD)
+                  </label>
+                  <div className="relative">
+                    <DollarSign className="absolute left-3 top-2.5 w-4 h-4 text-gray-400" />
+                    <input
+                      type="number"
+                      min="0"
+                      placeholder="0.00"
+                      className="w-full pl-9 pr-3 py-2 border rounded text-sm bg-white outline-none focus:border-gray-500"
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          purchasePrice: Number(e.target.value),
+                        })
+                      }
+                    />
+                  </div>
+                </div>
+                <div className="col-span-2">
+                  <label className="block text-[10px] font-bold text-gray-500 uppercase mb-1">
+                    Fecha de Instalación
+                  </label>
+                  <div className="relative">
+                    <Calendar className="absolute left-3 top-2.5 w-4 h-4 text-gray-400" />
+                    <input
+                      type="date"
+                      className="w-full pl-9 pr-3 py-2 border rounded text-sm bg-white outline-none focus:border-gray-500"
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          installationDate: e.target.value,
+                        })
+                      }
+                    />
+                  </div>
+                </div>
+
+                <div className="col-span-2 border-t border-gray-100 my-0"></div>
+
+                {/* 3. Notas Técnicas */}
+                <div className="col-span-2">
+                  <label className="block text-[10px] font-bold text-gray-500 uppercase mb-1">
+                    Especificaciones Técnicas
+                  </label>
+                  <textarea
+                    rows={2}
+                    placeholder="Ej: 220V CA, Trifásico..."
+                    value={formData.technicalSpecs}
+                    className="w-full px-3 py-2 border rounded text-sm bg-white resize-none outline-none focus:border-gray-500"
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        technicalSpecs: e.target.value,
+                      })
+                    }
+                  />
+                </div>
+                <div className="col-span-2">
+                  <label className="block text-[10px] font-bold text-gray-500 uppercase mb-1">
+                    Notas Operativas
+                  </label>
+                  <textarea
+                    rows={2}
+                    placeholder="Ej: Revisar nivel de aceite semanalmente..."
+                    value={formData.operationalNotes}
+                    className="w-full px-3 py-2 border rounded text-sm bg-white resize-none outline-none focus:border-gray-500"
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        operationalNotes: e.target.value,
+                      })
+                    }
+                  />
+                </div>
               </div>
             </div>
-            <div>
-              <label className="block text-[10px] font-bold text-gray-500 uppercase mb-1">
-                Línea de Producción
-              </label>
-              <div className="relative">
-                <Factory className="absolute left-2 top-2.5 text-gray-400 w-3 h-3" />
-                <input
-                  required
-                  type="text"
-                  placeholder="Línea 1"
-                  className="w-full pl-8 pr-3 py-2 border border-gray-300 rounded text-sm outline-none"
-                  onChange={(e) =>
-                    setFormData({ ...formData, productionLine: e.target.value })
-                  }
-                />
+
+            {/* COLUMNA DERECHA: Gestor Multimedia Combinado */}
+            <div className="space-y-4 bg-gray-50 p-5 rounded-lg border border-gray-200 flex flex-col shadow-sm">
+              <p className="text-xs font-bold text-gray-600 uppercase tracking-wider border-b border-gray-200 pb-3 shrink-0">
+                Archivos y Documentación
+              </p>
+
+              <div className="flex-1 overflow-y-auto pr-2 space-y-4">
+                {/* SECCIÓN IMAGEN PRINCIPAL */}
+                <div className="space-y-2">
+                  <label className="text-[10px] font-bold text-gray-500 uppercase block">
+                    Imagen del Activo
+                  </label>
+                  {customImage ? (
+                    <div className="flex items-center justify-between p-2 border bg-white rounded-lg border-gray-200 shadow-sm animate-fadeIn">
+                      <div className="flex items-center space-x-3">
+                        <img
+                          src={URL.createObjectURL(customImage)}
+                          className="w-12 h-12 object-cover rounded border border-gray-200"
+                          alt="preview"
+                        />
+                        <div className="overflow-hidden">
+                          <p className="text-xs font-bold text-gray-700 truncate max-w-[180px]">
+                            {customImage.name}
+                          </p>
+                          <p className="text-[10px] text-gray-400">
+                            {formatFileSize(customImage.size)}
+                          </p>
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setCustomImage(null)}
+                        className="text-red-500 p-1.5 hover:bg-red-50 rounded transition-colors"
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    </div>
+                  ) : inheritedImageUrl ? (
+                    <div className="flex items-center justify-between p-2 border border-green-200 bg-green-50/50 rounded-lg">
+                      <div className="flex items-center space-x-3">
+                        <img
+                          src={inheritedImageUrl}
+                          className="w-12 h-12 object-cover rounded border border-green-300"
+                          alt="heredada"
+                        />
+                        <div>
+                          <p className="text-xs font-bold text-green-800">
+                            Imagen heredada del catálogo
+                          </p>
+                          <p className="text-[10px] text-green-600/70 flex items-center">
+                            <CloudCheck className="w-3 h-3 mr-0.5" /> Ya alojada
+                            en la nube
+                          </p>
+                        </div>
+                      </div>
+                      <div className="relative group p-1.5 border border-gray-300 rounded bg-white text-xs font-bold text-gray-600 hover:bg-gray-50 overflow-hidden cursor-pointer shadow-sm transition-colors">
+                        <input
+                          type="file"
+                          accept="image/*"
+                          className="absolute inset-0 opacity-0 cursor-pointer"
+                          onChange={(e) =>
+                            setCustomImage(
+                              e.target.files ? e.target.files[0] : null,
+                            )
+                          }
+                        />
+                        Reemplazar
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="relative border-2 border-dashed border-gray-300 rounded-lg p-4 text-center hover:bg-gray-100 cursor-pointer transition-colors">
+                      <input
+                        type="file"
+                        accept="image/*"
+                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                        onChange={(e) =>
+                          setCustomImage(
+                            e.target.files ? e.target.files[0] : null,
+                          )
+                        }
+                      />
+                      <UploadCloud className="w-6 h-6 mx-auto text-gray-400 mb-1" />
+                      <span className="text-xs font-semibold text-gray-600 block">
+                        Subir Imagen Principal
+                      </span>
+                    </div>
+                  )}
+                </div>
+
+                {/* SECCIÓN MANUALES PDFs */}
+                <div className="space-y-2">
+                  <label className="text-[10px] font-bold text-gray-500 uppercase block">
+                    Manuales Técnicos (PDF)
+                  </label>
+                  <div className="relative border-2 border-dashed border-gray-300 rounded-lg p-3 text-center hover:bg-gray-100 cursor-pointer mb-2 transition-colors">
+                    <input
+                      type="file"
+                      accept=".pdf"
+                      multiple
+                      className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                      onChange={(e) => handleManualsChange(e.target.files)}
+                    />
+                    <UploadCloud className="w-5 h-5 mx-auto text-gray-400 mb-1" />
+                    <span className="text-xs font-semibold text-gray-600 block">
+                      Añadir nuevos planos / PDFs
+                    </span>
+                  </div>
+
+                  {/* Lista unificada (Heredados + Nuevos) */}
+                  <div className="space-y-1.5 max-h-[120px] overflow-y-auto pr-1">
+                    {inheritedManuals.map((url, i) => (
+                      <div
+                        key={`inh-${i}`}
+                        className="flex items-center justify-between p-2 border bg-green-50/50 border-green-200 text-xs rounded"
+                      >
+                        <div className="flex items-center space-x-2 truncate font-medium text-green-800">
+                          <CloudCheck className="w-4 h-4 text-green-600 shrink-0" />
+                          <span className="truncate max-w-[220px]">
+                            Manual Heredado {i + 1}
+                          </span>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => removeInheritedManual(url)}
+                          className="text-green-700 hover:text-red-500 p-1"
+                        >
+                          <X size={14} />
+                        </button>
+                      </div>
+                    ))}
+                    {serviceManuals.map((file, i) => (
+                      <div
+                        key={`new-${i}`}
+                        className="flex items-center justify-between p-2 border bg-white border-gray-200 text-xs rounded shadow-sm"
+                      >
+                        <div className="flex items-center space-x-2 truncate font-medium text-gray-700">
+                          <FileText className="w-4 h-4 text-red-500 shrink-0" />
+                          <span className="truncate max-w-[220px]">
+                            {file.name}
+                          </span>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => removeManual(i)}
+                          className="text-gray-400 hover:text-red-500 p-1"
+                        >
+                          <X size={14} />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* SECCIÓN GALERÍA DE FOTOS */}
+                <div className="space-y-2">
+                  <label className="text-[10px] font-bold text-gray-500 uppercase block">
+                    Galería Extra de Respaldo
+                  </label>
+                  <div className="relative border-2 border-dashed border-gray-300 rounded-lg p-3 text-center hover:bg-gray-100 cursor-pointer mb-2 transition-colors">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      multiple
+                      className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                      onChange={(e) => handleImagesChange(e.target.files)}
+                    />
+                    <UploadCloud className="w-5 h-5 mx-auto text-gray-400 mb-1" />
+                    <span className="text-xs font-semibold text-gray-600 block">
+                      Añadir capturas a la galería
+                    </span>
+                  </div>
+
+                  {/* Grilla unificada */}
+                  {(inheritedImages.length > 0 || images.length > 0) && (
+                    <div className="grid grid-cols-4 sm:grid-cols-5 gap-2 p-2 bg-white border border-gray-200 rounded max-h-[120px] overflow-y-auto shadow-inner">
+                      {inheritedImages.map((url, i) => (
+                        <div
+                          key={`inh-img-${i}`}
+                          className="relative group aspect-square rounded border border-green-300 overflow-hidden bg-green-50"
+                        >
+                          <img
+                            src={url}
+                            className="w-full h-full object-cover"
+                            alt="heredada"
+                          />
+                          <span className="absolute top-0 left-0 bg-green-500/90 text-[8px] font-bold text-white px-1.5 py-0.5 rounded-br">
+                            Nube
+                          </span>
+                          <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
+                            <button
+                              type="button"
+                              onClick={() => removeInheritedImage(url)}
+                              className="bg-red-500 text-white p-1 rounded-full hover:bg-red-600 transition-colors"
+                            >
+                              <X size={12} />
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                      {images.map((file, i) => (
+                        <div
+                          key={`new-img-${i}`}
+                          className="relative group aspect-square rounded border border-gray-200 overflow-hidden bg-gray-50"
+                        >
+                          <img
+                            src={URL.createObjectURL(file)}
+                            className="w-full h-full object-cover"
+                            alt="nueva"
+                          />
+                          <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
+                            <button
+                              type="button"
+                              onClick={() => removeImage(i)}
+                              className="bg-red-500 text-white p-1 rounded-full hover:bg-red-600 transition-colors shadow"
+                            >
+                              <X size={12} />
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
           </div>
 
-          <div>
-            <label className="block text-[10px] font-bold text-gray-500 uppercase mb-1">
-              Ubicación Física
-            </label>
-            <input
-              type="text"
-              className="w-full px-3 py-2 border border-gray-300 rounded text-sm outline-none"
-              onChange={(e) =>
-                setFormData({ ...formData, location: e.target.value })
-              }
-            />
-          </div>
+          {/* BOTONES ACCION */}
+          <div className="flex space-x-3 pt-4 border-t items-center bg-white mt-2">
+            {isLoading ? (
+              <div className="flex items-center text-xs font-bold text-blue-600 flex-1 animate-pulse">
+                <Loader2 className="w-4 h-4 animate-spin mr-2" />{" "}
+                <span>{uploadStatus}</span>
+              </div>
+            ) : (
+              <div className="flex-1" />
+            )}
 
-          <div className="flex space-x-3 pt-4">
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 px-4 py-2 border border-gray-300 text-gray-600 rounded text-xs font-bold uppercase"
+              className="px-6 py-3 border text-gray-600 rounded text-xs font-bold uppercase hover:bg-gray-50 transition-colors disabled:opacity-50"
+              disabled={isLoading}
             >
               Cancelar
             </button>
             <button
               type="submit"
               disabled={isLoading}
-              className="flex-1 px-4 py-2 bg-gray-700 text-white rounded text-xs font-bold hover:bg-gray-800 disabled:bg-gray-400 flex items-center justify-center uppercase tracking-widest"
+              className="px-6 py-3 bg-gray-800 text-white rounded text-xs font-bold uppercase tracking-wider hover:bg-gray-900 transition-colors disabled:bg-gray-400 flex items-center shadow-sm"
             >
-              {isLoading ? (
-                <Loader2 className="w-4 h-4 animate-spin" />
-              ) : (
-                "Guardar"
-              )}
+              {isLoading ? "Procesando..." : "Registrar Máquina"}
             </button>
           </div>
         </form>
