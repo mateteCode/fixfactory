@@ -151,7 +151,7 @@ const RegisterPage = () => {
         </form>
 
         <p className="text-center text-xs text-gray-500 mt-6 uppercase font-semibold">
-          ¿Ya tienes cuenta?{" "}
+          ¿Ya tenés cuenta?{" "}
           <Link to="/login" className="text-blue-600 hover:underline">
             Inicia Sesión
           </Link>

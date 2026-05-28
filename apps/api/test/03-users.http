@@ -8,19 +8,51 @@ Content-Type: application/json
   "password": "asistentepassword123"
 }
 
+### LOGIN COMO ADMIN PARA ELIMINAR FISICAMENTE A PERSONAL
+# @name loginAsistente
+POST http://localhost:3000/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "juanchispita@fosforos.com",
+  "password": "password123"
+}
+
 ### Token de Asistente
 @token = {{loginAsistente.response.body.token}}
 
-### A. OBTENER LISTA DE USUARIOS ACTIVOS
+### 1. OBTENER LISTA DE USUARIOS ACTIVOS
 GET http://localhost:3000/api/users
 Authorization: Bearer {{token}}
 
-### B. BORRADO LÓGICO (Desactivar Técnico)
-# Reemplazar ID_USER
-PATCH http://localhost:3000/api/users/69f4616569c610fda7b50fd8/deactivate
+### 2. REGISTRAR UN USUARIO SIN PROPORCIONAR CONTRASEÑA
+POST http://localhost:3000/api/users/
 Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "name": "Pedro Desactivame",
+  "email": "pedro@fosforos.com",
+  "role": "TECNICO"
+}
+
+### 3. BORRADO LÓGICO (Desactivar Técnico)
+# Reemplazar ID_USER
+PATCH http://localhost:3000/api/users/6a1869e652088c64e013d2b0/deactivate
+Authorization: Bearer {{token}}
+
+### 3. ACTUALIZAR DATOS DE UN USUARIO
+PUT http://localhost:3000/api/users/6a1869e652088c64e013d2b0
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "name": "Pedro Borrame",
+  "email": "pedro2@fosforos.com",
+  "role": "GERENTE"
+}
 
 ### C. BORRADO FÍSICO (Eliminar por error de carga)
 # Reemplazar ID_USER
-DELETE http://localhost:3000/api/users/69f4616569c610fda7b50fd8
+DELETE http://localhost:3000/api/users/6a1869e652088c64e013d2b0
 Authorization: Bearer {{token}}

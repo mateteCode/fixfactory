@@ -3,17 +3,16 @@ import MachineProfile from "../models/MachineProfile.js";
 import MachinePattern from "../models/MachinePattern.js";
 
 export class MachineService {
+  // [✔] Obtiene todas las máquinas de una compañia
   static async getAllMachines(companyId: string) {
-    // Buscamos el Nivel 3 (Físico) y le hacemos populate al Nivel 1 (Patrón)
-    //lean() es clave para rendimiento, devuelve JSON puro en lugar de documentos pesados de Mongoose
     const machines = await Machine.find({ company: companyId })
       .populate("catalogRef")
-      .lean();
+      .lean(); //es clave para rendimiento, devuelve JSON puro en lugar de documentos pesados de Mongoose
 
-    // B. Buscamos el Nivel 2 (Perfiles) de esta empresa
+    // Buscamos el Nivel 2 (Perfiles) de esta empresa
     const profiles = await MachineProfile.find({ company: companyId }).lean();
 
-    // C. Aplastamos (Flatten) los datos para que el frontend reciba lo que ya conoce
+    // Preparamos la respuesta con los datos integrados de los 3 niveles
     return machines.map((machine: any) => {
       const pattern = machine.catalogRef;
 
@@ -23,7 +22,7 @@ export class MachineService {
       );
 
       return {
-        _id: machine._id, // ID de la máquina física
+        _id: machine._id,
         internalTag: machine.internalTag,
         status: machine.status,
         productionLine: machine.productionLine,
@@ -37,13 +36,19 @@ export class MachineService {
         name: pattern?.name || "Activo Industrial",
 
         // Datos del Perfil (Nivel 2) con fallback al Patrón (Nivel 1)
-        imageUrl: profile?.customImageUrl || pattern?.defaultImageUrl || "",
+        imageUrl:
+          profile?.customImageUrl && profile?.customImageUrl !== ""
+            ? profile?.customImageUrl
+            : pattern?.defaultImageUrl || "",
         manuals: profile?.serviceManuals || [],
       };
     });
   }
 
+  // [✔] Crea una máquina
+  // TODO: Actualizar Profile de la maquina (Nivel 2), una vez que ya fue creado
   static async createMachine(companyId: string, data: any) {
+    let isMachinePatternCreated = false;
     // Validaciones
     if (!data.brand || !data.modelCode || !data.internalTag) {
       throw new Error(
@@ -67,10 +72,12 @@ export class MachineService {
         brand: data.brand,
         modelCode: data.modelCode,
         name: data.name,
-        technicalSpecs: data.technicalSpecs,
+        technicalSpecs: data.technicalSpecs || "",
+        defaultImageUrl: data.defaultImageUrl || data.customImageUrl || "",
         createdByCompany: companyId,
-        isPrivate: data.isPrivate || false, // Si es un invento de la fábrica, va true
+        isPrivate: data.isPrivate || false,
       });
+      isMachinePatternCreated = true;
     }
 
     // Buscar o Crear el Perfil Privado (Nivel 2)
@@ -83,7 +90,9 @@ export class MachineService {
       profile = await MachineProfile.create({
         catalogRef: pattern._id,
         company: companyId,
-        customImageUrl: data.customImageUrl || "",
+        customImageUrl: isMachinePatternCreated
+          ? ""
+          : data.customImageUrl || "",
         serviceManuals: data.serviceManuals || [],
         images: data.images || [],
         operationalNotes: data.operationalNotes || "",
@@ -127,6 +136,7 @@ export class MachineService {
     };
   }
 
+  // [!] Desactivar una máquina de una compañia (borrado lógico)
   static async deactivateMachine(machineId: string, companyId: string) {
     const machine = await Machine.findOne({
       _id: machineId,
@@ -137,6 +147,10 @@ export class MachineService {
       throw new Error("La máquina no existe o no pertenece a tu empresa.");
     }
 
+    if (!machine.active) {
+      throw new Error("La máquina ya se encuentra dada de baja.");
+    }
+
     machine.status = MachineStatus.APAGADA;
     machine.active = false;
 
@@ -144,6 +158,7 @@ export class MachineService {
     return machine;
   }
 
+  // [✔] Actualizar una máquina
   static async updateMachine(machineId: string, companyId: string, data: any) {
     const machine = await Machine.findOne({
       _id: machineId,
@@ -195,6 +210,7 @@ export class MachineService {
     return machine;
   }
 
+  // [✔] Obtener una máquina por su ID
   static async getMachineById(machineId: string, companyId: string) {
     const machine = await Machine.findOne({
       _id: machineId,
@@ -220,17 +236,16 @@ export class MachineService {
       productionLine: machine.productionLine,
       location: machine.location,
       installationDate: machine.installationDate,
-
-      purchasePrice: machine.purchasePrice, // <-- ASEGURARSE QUE ESTÉ
-      createdAt: machine.createdAt, // <-- NUEVO: Fecha de alta en el sistema
+      purchasePrice: machine.purchasePrice,
+      createdAt: machine.createdAt,
 
       // Datos del Catálogo (Nivel 1)
       brand: pattern?.brand || "Desconocida",
       modelCode: pattern?.modelCode || "S/N",
       name: pattern?.name || "Activo",
       technicalSpecs: pattern?.technicalSpecs || "",
-      isVerified: pattern?.isVerified || false, // <-- NUEVO: Saber si es un patrón global oficial
-      isPrivate: pattern?.isPrivate || false, // <-- NUEVO: Saber si es un invento de la empresa
+      isVerified: pattern?.isVerified || false,
+      isPrivate: pattern?.isPrivate || false,
 
       // Datos del Perfil (Nivel 2)
       operationalNotes: profile?.operationalNotes || "",
@@ -240,13 +255,14 @@ export class MachineService {
     };
   }
 
+  // [✔] Patrones/modelos de todas las máquinas
   static async getPatterns(companyId: string) {
-    // 1. Buscamos los patrones globales o creados por la empresa
+    // Buscamos los patrones globales o creados por la empresa
     const patterns = await MachinePattern.find({
       $or: [{ isVerified: true }, { createdByCompany: companyId }],
     }).lean();
 
-    // 2. Por cada patrón, buscamos si la empresa ya le armó un Perfil de Documentación (Nivel 2)
+    // Por cada patrón, buscamos si la empresa ya le armó un Perfil de Documentación (Nivel 2)
     const detailedPatterns = await Promise.all(
       patterns.map(async (pattern: any) => {
         const profile = await MachineProfile.findOne({
@@ -265,7 +281,10 @@ export class MachineService {
 
           // Inyectamos la documentación multimedia del Nivel 2
           operationalNotes: profile?.operationalNotes || "",
-          imageUrl: profile?.customImageUrl || pattern.defaultImageUrl || "",
+          imageUrl:
+            profile?.customImageUrl && profile?.customImageUrl !== ""
+              ? profile?.customImageUrl
+              : pattern.defaultImageUrl || "",
           manuals: profile?.serviceManuals || [],
           images: profile?.images || [],
         };

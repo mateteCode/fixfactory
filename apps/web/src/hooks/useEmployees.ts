@@ -16,7 +16,12 @@ export const useEmployees = () => {
   const fetchEmployees = useCallback(async () => {
     try {
       setIsLoading(true);
-      const response = await api.get("/users");
+      //const response = await api.get("/users");
+      const response = await api.get("/users", {
+        params: {
+          includeInactive: "true",
+        },
+      });
       setEmployees(response.data);
     } catch (error) {
       console.error("Error al cargar la lista de personal:", error);
@@ -71,6 +76,17 @@ export const useEmployees = () => {
     }
   };
 
+  const activateEmployee = async (id: string) => {
+    try {
+      await api.patch(`/users/${id}/activate`);
+      await fetchEmployees();
+    } catch (error: any) {
+      throw new Error(
+        error.response?.data?.message || "Error al activar empleado",
+      );
+    }
+  };
+
   useEffect(() => {
     fetchEmployees();
   }, [fetchEmployees]);
@@ -82,6 +98,7 @@ export const useEmployees = () => {
     createEmployee,
     updateEmployee,
     deactivateEmployee,
+    activateEmployee,
     refetch: fetchEmployees,
   };
 };

@@ -11,18 +11,16 @@ import companyRoutes from "./routes/company.routes.js";
 
 const app = express();
 
-// Middlewares
 //app.use(cors());
 app.use(
   cors({
-    origin: process.env.CORS_ORIGIN, // El origen de tu frontend en desarrollo
+    origin: process.env.CORS_ORIGIN, // El origen del frontend
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
     allowedHeaders: ["Content-Type", "Authorization"],
-    credentials: true, // Permitir cookies o headers de autenticación si los usas
+    credentials: true, // Permitir cookies o headers de autenticación
     optionsSuccessStatus: 200, // Algunas versiones de navegadores antiguos fallan con el 204 por defecto
   }),
 );
-
 app.use(express.json());
 
 // RUTA DE DIAGNÓSTICO

@@ -14,8 +14,7 @@ export const isCompanyOwner = async (
     // Verificamos si el ID del usuario coincide con el owner de la empresa[cite: 2]
     if (!company || company.owner.toString() !== user.id) {
       return res.status(403).json({
-        message:
-          "Prohibido: Solo el dueño original de la cuenta puede modificar la empresa.",
+        message: "Prohibido: Solo el dueño de la empresa puede acceder.",
       });
     }
 

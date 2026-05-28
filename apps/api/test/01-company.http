@@ -1,15 +1,15 @@
 ### Variables Globales
 @apiUrl = http://localhost:3000/api
-@companyName = Fábrica Argentina de Motores
-@adminName = Matías Lorenzo
-@emailAdmin = matias@motoresarg.com
+@companyName = Ferrari
+@adminName = Enzo Ferrari
+@emailAdmin = enzo@ferrari.com
 @passwordAdmin = password123
-@taxId = 20-30456789-2
-@address = Av. General Paz 1234, CABA
-@newName = Motores Argentinos S.A
-@operarioName = Operario Juan
-@operarioEmail = juan@motoresarg.com
-@operarioPassword = operariopassword
+@taxId = 20-74698523-2
+@address = Av. Lugones 745, CABA
+@newName = Ferrari Argentina
+@operarioName = Juan Ferrari
+@operarioEmail = juan@ferrari.com
+@operarioPassword = password123
 
 ### 1. REGISTRO MAESTRO (Crear Empresa + Admin Owner)
 # @name registerMaster
@@ -56,7 +56,7 @@ Content-Type: application/json
   "name": "{{newName}}"
 }
 
-### 5a. REGISTRAR UN OPERARIO (Como el ADMIN de la empresa)
+### 5a. REGISTRAR UN OPERARIO (Como el token del ADMIN de la empresa)
 # @name registerOperario
 POST {{apiUrl}}/auth/register
 Authorization: Bearer {{tokenAdmin}}
@@ -92,3 +92,8 @@ Authorization: Bearer {{tokenOperario}}
 # Esto marca 'active: false'. Útil para bajas de suscripción.
 PATCH {{apiUrl}}/company/deactivate
 Authorization: Bearer {{tokenAdmin}}
+
+### 6b. INTENTO DE DESACTIVAR EMPRESA POR UN OPERARIO
+# Esto marca 'active: false'. Útil para bajas de suscripción.
+PATCH {{apiUrl}}/company/deactivate
+Authorization: Bearer {{tokenOperario}}

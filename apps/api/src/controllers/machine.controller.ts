@@ -6,7 +6,7 @@ import SparePartRequest from "../models/SparePartRequest.js";
 
 import { MachineService } from "../services/machine.service.js";
 
-// Obtener todas las máquinas de la empresa que pertenece el usuario
+// [✔] Obtiene todas las máquinas de la compañia del usuario
 export const getMachines = async (
   req: Request,
   res: Response,
@@ -30,7 +30,7 @@ export const getMachines = async (
   }
 };
 
-// Desactivar Máquina (Borrado lógico)
+// [!] Desactivar máquina de una compañia (Borrado lógico)
 export const deactivateMachine = async (
   req: Request,
   res: Response,
@@ -47,7 +47,7 @@ export const deactivateMachine = async (
   }
 };
 
-// Obtener una máquina por ID (útil para la Ficha Histórica RF-02)
+// [✔] Obtener una máquina por su ID
 export const getMachineById = async (
   req: Request,
   res: Response,
@@ -68,7 +68,8 @@ export const getMachineById = async (
       .json({ message: error.message || "Error al obtener la máquina" });
   }
 };
-// Crear una nueva máquina
+
+// [✔] Crear una nueva máquina
 export const createMachine = async (
   req: Request,
   res: Response,
@@ -89,7 +90,7 @@ export const createMachine = async (
   }
 };
 
-// Actualizar una máquina
+// [✔] Actualizar una máquina
 export const updateMachine = async (
   req: Request,
   res: Response,
@@ -115,7 +116,21 @@ export const updateMachine = async (
   }
 };
 
-// Eliminar una máquina
+// [✔] Patrones/modelos de todas las máquinas
+export const getPatterns = async (
+  req: Request,
+  res: Response,
+): Promise<void> => {
+  try {
+    const companyId = (req as any).companyId;
+    const patterns = await MachineService.getPatterns(companyId);
+    res.status(200).json(patterns);
+  } catch (error: any) {
+    res.status(500).json({ message: "Error al obtener patrones del catálogo" });
+  }
+};
+
+// [!] Eliminar una máquina fisicamente (No usa un servicio)
 export const deleteMachine = async (
   req: Request,
   res: Response,
@@ -138,6 +153,7 @@ export const deleteMachine = async (
   }
 };
 
+//[✔] Obtiene todo el historial de una máquina (No usa un servicio)
 export const getMachineHistory = async (
   req: Request,
   res: Response,
@@ -166,7 +182,7 @@ export const getMachineHistory = async (
     // Filtramos los repuestos que efectivamente pertenecen a esta máquina
     const filteredSpareParts = spareParts.filter((sp) => sp.issue !== null);
 
-    // Calculamos el costo total acumulado de la máquina (RF-11 parcial)
+    // Calculamos el costo total acumulado de la máquina
     const totalMaintenanceCost = filteredSpareParts.reduce((acc, curr: any) => {
       const unitPrice = curr.estimatedCost || curr.sparePart?.price || 0;
       const quantity = curr.quantity || 1;
@@ -186,18 +202,5 @@ export const getMachineHistory = async (
     res
       .status(500)
       .json({ message: "Error al generar la ficha histórica", error });
-  }
-};
-
-export const getPatterns = async (
-  req: Request,
-  res: Response,
-): Promise<void> => {
-  try {
-    const companyId = (req as any).companyId;
-    const patterns = await MachineService.getPatterns(companyId);
-    res.status(200).json(patterns);
-  } catch (error: any) {
-    res.status(500).json({ message: "Error al obtener patrones del catálogo" });
   }
 };

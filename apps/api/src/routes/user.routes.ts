@@ -3,6 +3,7 @@ import {
   getUsers,
   createUser,
   deactivateUser,
+  activateUser,
   deleteUserPhysical,
   updateUser,
 } from "../controllers/user.controller.js";
@@ -23,6 +24,12 @@ router.patch(
   "/:id/deactivate",
   authorize([UserRole.ASISTENTE, UserRole.ADMIN]),
   deactivateUser,
+);
+router.get("/", authorize([UserRole.ASISTENTE, UserRole.ADMIN]), getUsers);
+router.patch(
+  "/:id/activate",
+  authorize([UserRole.ASISTENTE, UserRole.ADMIN]),
+  activateUser,
 );
 router.delete("/:id", authorize([UserRole.ADMIN]), deleteUserPhysical); // El físico solo el ADMIN
 

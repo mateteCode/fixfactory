@@ -8,7 +8,7 @@ export enum CompanyPlan {
 
 export interface ICompany extends Document {
   name: string;
-  taxId?: string; // CUIT, RUT o equivalente
+  taxId?: string; // CUIT o equivalente
   address?: string;
   plan: CompanyPlan;
   owner: Types.ObjectId; // Referencia al Usuario que creó la empresa (ADMIN)
@@ -26,9 +26,9 @@ const companySchema = new Schema<ICompany>(
       trim: true,
     },
     taxId: {
-      type: String, // CUIT
+      type: String,
       unique: true,
-      sparse: true, // Permite que no todos tengan taxId, pero los que tengan sean únicos
+      sparse: true, // No es requerido pero si único. ignora los que son null
     },
     address: {
       type: String,
@@ -49,7 +49,7 @@ const companySchema = new Schema<ICompany>(
     },
   },
   {
-    timestamps: true, // Crea automáticamente createdAt y updatedAt
+    timestamps: true,
   },
 );
 

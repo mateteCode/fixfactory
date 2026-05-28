@@ -1,9 +1,7 @@
 import type { Request, Response } from "express";
 import Company from "../models/Company.js";
 
-/**
- * Obtener el perfil de la empresa del usuario actual
- */
+// [!] Obtener el perfil de la empresa
 export const getCompanyProfile = async (
   req: Request,
   res: Response,
@@ -30,9 +28,7 @@ export const getCompanyProfile = async (
   }
 };
 
-/**
- * Actualizar datos de la empresa (Solo para el Owner/ADMIN)
- */
+// [!] Actualizar datos de la empresa
 export const updateCompany = async (
   req: Request,
   res: Response,
@@ -41,8 +37,7 @@ export const updateCompany = async (
     const companyId = (req as any).companyId;
     const { name, taxId, address } = req.body;
 
-    // Solo permitimos editar ciertos campos.
-    // El 'owner' o el 'plan' no deberían cambiarse por esta ruta simple.
+    // Solo permitimos editar ciertos campos. El 'owner' o el 'plan' no deberían cambiarse por esta ruta simple.
     const updatedCompany = await Company.findByIdAndUpdate(
       companyId,
       { name, taxId, address },
@@ -66,9 +61,7 @@ export const updateCompany = async (
   }
 };
 
-/**
- * Borrado Lógico de la Empresa (Desactivar toda la organización)
- */
+// [!] Borrado lógico de la empresa (desactivar)
 export const deactivateCompany = async (
   req: Request,
   res: Response,

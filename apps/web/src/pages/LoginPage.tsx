@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import api from "../api/axios";
 import { useAuthStore } from "../store/useAuthStore";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Lock, Mail, Loader2 } from "lucide-react";
 import ForgotPasswordModal from "../components/auth/ForgotPasswordModal";
 
@@ -108,6 +108,12 @@ const LoginPage = () => {
             )}
           </button>
         </form>
+        <p className="text-center text-xs text-gray-500 mt-6 uppercase font-semibold">
+          ¿No tenés cuenta?{" "}
+          <Link to="/register" className="text-blue-600 hover:underline">
+            Registrate
+          </Link>
+        </p>
       </div>
       <ForgotPasswordModal
         isOpen={isForgotModalOpen}

@@ -6,7 +6,7 @@
 #@emailAdmin = admin@empresafantasma.com
 #@passwordAdmin = password123
 
-### 1B. LOGIN DEL ADMIN (Para obtener el Token)
+### LOGIN DEL ADMIN (Para obtener el Token)
 # @name loginAdmin
 POST {{apiUrl}}/auth/login
 Content-Type: application/json
@@ -20,7 +20,7 @@ Content-Type: application/json
 @tokenAdmin = {{loginAdmin.response.body.token}}
 
 
-### 1C. CREAR UNA MÁQUINA (NUEVA ARQUITECTURA DE 3 NIVELES)
+### 1. CREAR UNA MÁQUINA
 # @name createMachine
 POST {{apiUrl}}/machines
 Authorization: Bearer {{tokenAdmin}}
@@ -28,7 +28,7 @@ Content-Type: application/json
 
 {
   "brand": "Siemens",
-  "modelCode": "S7-1200",
+  "modelCode": "S8-1800",
   "name": "Autómata Programable (PLC)",
   "technicalSpecs": "24V DC, 14 DI / 10 DO",
   "isPrivate": false,
@@ -47,13 +47,11 @@ Content-Type: application/json
 
 
 ### 2. OBTENER TODAS LAS MÁQUINAS 
-# El servicio debe hacer el "Flatten" y devolver los datos unidos de los 3 modelos
 GET {{apiUrl}}/machines
 Authorization: Bearer {{tokenAdmin}}
 
 
-### 3. ACTUALIZAR MÁQUINA (Afecta Nivel 3 y Nivel 2)
-# Nota: Usamos PUT según tu nuevo enrutador
+### 3. ACTUALIZAR MÁQUINA
 PUT {{apiUrl}}/machines/{{machineId}}
 Authorization: Bearer {{tokenAdmin}}
 Content-Type: application/json
@@ -61,12 +59,11 @@ Content-Type: application/json
 {
   "location": "Planta 1 - Sector B (Movida)",
   "status": "Mantenimiento",
-  "operationalNotes": "Se movió al sector B. Revisar el tablero con más frecuencia."
+  "operationalNotes": "Ubicarlas todas en el sector B por tener buena ventilación."
 }
 
 
 ### 4. DESACTIVAR MÁQUINA (BORRADO LÓGICO)
-# Nota: Reemplaza al DELETE físico que tenías antes
 PATCH {{apiUrl}}/machines/{{machineId}}/deactivate
 Authorization: Bearer {{tokenAdmin}}
 
@@ -108,3 +105,16 @@ Authorization: Bearer {{tokenAdminFantasma}}
 # Debería dar un error indicando que la máquina no existe o no pertenece a tu empresa
 PATCH {{apiUrl}}/machines/{{machineId}}/deactivate
 Authorization: Bearer {{tokenAdminFantasma}}
+
+
+### 6. Obtener Todos los modelos/patrones de máquinas 
+GET {{apiUrl}}/machines/patterns
+Authorization: Bearer {{tokenAdmin}}
+
+### 7. Obteber una máquina por su ID
+GET {{apiUrl}}/machines/6a18857bd881c19e5b3d4ab6
+Authorization: Bearer {{tokenAdmin}}
+
+### 8. Obtener el historial de una máquina
+GET {{apiUrl}}/machines/6a18857bd881c19e5b3d4ab6/history
+Authorization: Bearer {{tokenAdmin}}

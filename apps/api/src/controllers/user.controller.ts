@@ -4,7 +4,7 @@ import { PasswordHasher } from "../utils/PasswordHasher.js";
 import bcrypt from "bcryptjs";
 import { sendWelcomeEmail } from "../services/mail.service.js";
 
-// Listar usuarios (solo activos por defecto)
+// [✔] Listar usuarios (solo activos por defecto)
 export const getUsers = async (req: Request, res: Response) => {
   try {
     const companyId = (req as any).companyId;
@@ -20,6 +20,7 @@ export const getUsers = async (req: Request, res: Response) => {
   }
 };
 
+// [✔] Crear Registrar un usuario mandandole una contraseña aleatoria a su email
 export const createUser = async (
   req: Request,
   res: Response,
@@ -28,7 +29,6 @@ export const createUser = async (
     const companyId = (req as any).companyId;
     const { name, email, role } = req.body;
 
-    // Verificar si el correo ya existe en la base de datos
     const existingUser = await User.findOne({ email });
     if (existingUser) {
       res.status(400).json({
@@ -42,7 +42,6 @@ export const createUser = async (
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(generatedPassword, salt);
 
-    // Crear el usuario
     const newUser = new User({
       name,
       email,
@@ -50,7 +49,6 @@ export const createUser = async (
       role,
       company: companyId,
     });
-
     await newUser.save();
 
     // Enviar el correo con la contraseña en texto plano (asíncrono, no traba la respuesta)
@@ -64,29 +62,53 @@ export const createUser = async (
   }
 };
 
-// Borrado Lógico (Desactivar)
-export const deactivateUser = async (req: Request, res: Response) => {
+// [✔] Reactivar usuario que se encuentra inactivo
+export const activateUser = async (req: Request, res: Response) => {
   try {
     const companyId = (req as any).companyId;
     const { id } = req.params;
 
-    // Buscar al usuario validando pertenencia a la empresa
     const user = await User.findOne({ _id: id as string, company: companyId });
-
     if (!user) {
       return res.status(404).json({
         message: "Usuario no encontrado en tu empresa o no existe.",
       });
     }
 
-    // Verificar si ya se encuentra desactivado
+    if (user.active) {
+      return res.status(400).json({
+        message: `El usuario ${user.name} ya se encuentra activo actualmente.`,
+      });
+    }
+
+    user.active = true;
+    await user.save();
+
+    res.json({ message: "Usuario activado correctamente", user });
+  } catch (error) {
+    res.status(500).json({ message: "Error al activar usuario" });
+  }
+};
+
+// [✔] Borrado Lógico (Desactivar) para usuarios activos
+export const deactivateUser = async (req: Request, res: Response) => {
+  try {
+    const companyId = (req as any).companyId;
+    const { id } = req.params;
+
+    const user = await User.findOne({ _id: id as string, company: companyId });
+    if (!user) {
+      return res.status(404).json({
+        message: "Usuario no encontrado en tu empresa o no existe.",
+      });
+    }
+
     if (!user.active) {
       return res.status(400).json({
         message: `El usuario ${user.name} ya se encuentra desactivado actualmente.`,
       });
     }
 
-    // Proceder con la desactivación (Borrado Lógico)
     user.active = false;
     await user.save();
 
@@ -96,7 +118,7 @@ export const deactivateUser = async (req: Request, res: Response) => {
   }
 };
 
-// Borrado Físico (Eliminar de la DB)
+// [!] Borrado Físico (Eliminar de la DB)
 export const deleteUserPhysical = async (req: Request, res: Response) => {
   try {
     const companyId = (req as any).companyId;
@@ -119,6 +141,7 @@ export const deleteUserPhysical = async (req: Request, res: Response) => {
   }
 };
 
+// [✔] Actualizar datos de un usuario (sólo nombre, rol y correo)
 export const updateUser = async (
   req: Request,
   res: Response,
@@ -130,7 +153,10 @@ export const updateUser = async (
 
     // Verificar si el nuevo correo ya está en uso por OTRO usuario
     if (email) {
-      const existingUser = await User.findOne({ email, _id: { $ne: id } });
+      const existingUser = await User.findOne({
+        email,
+        _id: { $ne: id as string },
+      });
       if (existingUser) {
         res.status(400).json({
           message: "El correo electrónico ya está en uso por otro usuario.",
@@ -141,7 +167,7 @@ export const updateUser = async (
 
     // Actualizamos explícitamente solo los campos permitidos
     const updatedUser = await User.findOneAndUpdate(
-      { _id: id, company: companyId },
+      { _id: id as string, company: companyId },
       { name, email, role },
       { new: true, runValidators: true },
     ).select("-password");

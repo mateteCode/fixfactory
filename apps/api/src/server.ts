@@ -5,7 +5,6 @@ import { initCronJobs } from "./services/cron.service.js";
 
 const PORT = process.env.PORT || 3000;
 
-// Iniciar la conexión a la base de datos antes de levantar el servidor [cite: 305, 1144]
 connectDB().then(() => {
   initCronJobs();
   app.listen(PORT, () => {

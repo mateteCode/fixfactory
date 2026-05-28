@@ -1,6 +1,6 @@
 import type { Request, Response } from "express";
-import Company from "../models/Company.js";
-import User from "../models/User.js";
+import Company, { CompanyPlan } from "../models/Company.js";
+import User, { UserRole } from "../models/User.js";
 import { PasswordHasher } from "../utils/PasswordHasher.js";
 import jwt from "jsonwebtoken";
 import mongoose from "mongoose";
@@ -8,6 +8,7 @@ import crypto from "crypto";
 import bcrypt from "bcryptjs";
 import { sendPasswordResetEmail } from "../services/mail.service.js";
 
+// [!] Registrar un usuario con contraseña elegida
 export const register = async (req: Request, res: Response) => {
   try {
     const { email, password, name, role } = req.body;
@@ -28,7 +29,7 @@ export const register = async (req: Request, res: Response) => {
       email,
       password: hashedPassword,
       role,
-      company: companyId, // Asignación automática y segura
+      company: companyId,
     });
     await newUser.save();
 
@@ -38,6 +39,7 @@ export const register = async (req: Request, res: Response) => {
   }
 };
 
+// [✔] Loguearse con un usuario, devuelve un token de 8hs con información del usuario y compañia
 export const login = async (req: Request, res: Response) => {
   try {
     const { email, password } = req.body;
@@ -68,12 +70,6 @@ export const login = async (req: Request, res: Response) => {
 
     res.json({
       token,
-      /* // WARNING: Se cambio la estructura del json para que funcione en el front. Verificar que no afecte al backend
-      id: user._id,
-      companyId: user.company,
-      role: user.role,
-      name: user.name,
-      */
       user: {
         id: user._id,
         name: user.name,
@@ -87,11 +83,12 @@ export const login = async (req: Request, res: Response) => {
   }
 };
 
+// [✔] Registrar una compañia y su usuario ADMIN
 export const registerCompany = async (req: Request, res: Response) => {
   try {
     const { companyName, adminName, email, password } = req.body;
 
-    // 1. Validaciones previas
+    // Validaciones de que no exista la compañia ni el usuario
     const existingCompany = await Company.findOne({ name: companyName });
     if (existingCompany)
       return res.status(400).json({ message: "La empresa ya existe" });
@@ -100,30 +97,29 @@ export const registerCompany = async (req: Request, res: Response) => {
     if (existingUser)
       return res.status(400).json({ message: "El email ya está en uso" });
 
-    // 2. GENERAR IDs POR ADELANTADO
+    // Generar IDs por adelantado
     const companyId = new mongoose.Types.ObjectId();
     const adminId = new mongoose.Types.ObjectId();
 
-    // 3. CREAR EL ADMIN (con el ID de la empresa ya asignado)
+    // Creamos al Admin con el ID de la empresa ya asignado
     const hashedPassword = await PasswordHasher.hash(password);
     const newAdmin = new User({
       _id: adminId,
       name: adminName,
       email,
       password: hashedPassword,
-      role: "ADMIN",
-      company: companyId, // Ahora sí tiene el ID requerido
+      role: UserRole.ADMIN,
+      company: companyId,
     });
 
-    // 4. CREAR LA EMPRESA (con el ID del admin como owner)
+    // Creamos la empresa con el ID del admin como owner
     const newCompany = new Company({
       _id: companyId,
       name: companyName,
       owner: adminId,
-      plan: "FREE",
+      plan: CompanyPlan.FREE,
     });
 
-    // 5. GUARDAR AMBOS (El orden ya no rompe la validación)
     await newAdmin.save();
     await newCompany.save();
 
@@ -218,7 +214,10 @@ export const resetPassword = async (
     const { newPassword } = req.body;
 
     // Hasheamos el token que viene de la URL para compararlo con el de la base de datos
-    const hashedToken = crypto.createHash("sha256").update(token).digest("hex");
+    const hashedToken = crypto
+      .createHash("sha256")
+      .update(token as string)
+      .digest("hex");
 
     // Buscamos al usuario que tenga ese token y que no haya expirado
     const user = await User.findOne({
@@ -236,8 +235,8 @@ export const resetPassword = async (
     user.password = await bcrypt.hash(newPassword, salt);
 
     // Limpiar los campos de recuperación para que el token no se pueda reusar
-    user.resetPasswordToken = undefined;
-    user.resetPasswordExpire = undefined;
+    user.resetPasswordToken = "";
+    user.resetPasswordExpire = new Date();
     await user.save();
 
     res.status(200).json({
