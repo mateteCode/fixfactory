@@ -4,6 +4,8 @@ import Issue from "../models/Issue.js";
 import PreventiveMaintenance from "../models/PreventiveMaintenance.js";
 import SparePartRequest from "../models/SparePartRequest.js";
 
+import { MachineService } from "../services/machine.service.js";
+
 // Obtener todas las máquinas de la empresa que pertenece el usuario
 export const getMachines = async (
   req: Request,
@@ -11,10 +13,37 @@ export const getMachines = async (
 ): Promise<void> => {
   try {
     const companyId = (req as any).companyId;
-    const machines = await Machine.find({ company: companyId });
-    res.status(200).json(machines);
-  } catch (error) {
-    res.status(500).json({ message: "Error al recuperar las máquinas", error });
+    if (!companyId) {
+      res
+        .status(400)
+        .json({ message: "No se identificó la empresa del usuario." });
+      return;
+    }
+
+    const formattedMachines = await MachineService.getAllMachines(companyId);
+    res.status(200).json(formattedMachines);
+  } catch (error: any) {
+    res.status(500).json({
+      message: "Error al recuperar las máquinas",
+      error: error.message,
+    });
+  }
+};
+
+// Desactivar Máquina (Borrado lógico)
+export const deactivateMachine = async (
+  req: Request,
+  res: Response,
+): Promise<void> => {
+  try {
+    const companyId = (req as any).companyId;
+    const { id } = req.params;
+
+    await MachineService.deactivateMachine(id as string, companyId);
+
+    res.status(200).json({ message: "Máquina dada de baja exitosamente" });
+  } catch (error: any) {
+    res.status(404).json({ message: error.message });
   }
 };
 
@@ -24,51 +53,39 @@ export const getMachineById = async (
   res: Response,
 ): Promise<void> => {
   try {
-    const companyId = (req as any).companyId as string;
-    const machine = await Machine.findOne({
-      _id: req.params.id as string,
-      company: companyId,
-    });
-    if (!machine) {
-      res
-        .status(404)
-        .json({ message: "Máquina no encontrada o acceso denegado" });
-      return;
-    }
+    const companyId = (req as any).companyId;
+    const { id } = req.params;
+
+    const machine = await MachineService.getMachineById(
+      id as string,
+      companyId,
+    );
+
     res.status(200).json(machine);
-  } catch (error) {
-    res.status(500).json({ message: "Error al buscar la máquina", error });
+  } catch (error: any) {
+    res
+      .status(404)
+      .json({ message: error.message || "Error al obtener la máquina" });
   }
 };
-
 // Crear una nueva máquina
 export const createMachine = async (
   req: Request,
   res: Response,
 ): Promise<void> => {
   try {
-    console.log(req.body);
     const companyId = (req as any).companyId;
-    const { code } = req.body;
 
-    // Verificar si ya existe una máquina con ese código
-    const existingMachine = await Machine.findOne({ code });
+    const newMachine = await MachineService.createMachine(companyId, req.body);
 
-    if (existingMachine) {
-      res.status(400).json({
-        message: `Ya existe una máquina registrada con el código: ${code}`,
-      });
-      return;
-    }
-    const newMachine = new Machine({
-      ...req.body,
-      company: companyId,
+    res.status(201).json({
+      message: "Máquina registrada exitosamente en el sistema",
+      machine: newMachine,
     });
-    const savedMachine = await newMachine.save();
-
-    res.status(201).json(savedMachine);
-  } catch (error) {
-    res.status(400).json({ message: "Error al crear la máquina", error });
+  } catch (error: any) {
+    res.status(400).json({
+      message: error.message || "Error al crear la máquina",
+    });
   }
 };
 
@@ -79,20 +96,22 @@ export const updateMachine = async (
 ): Promise<void> => {
   try {
     const companyId = (req as any).companyId;
-    const updatedMachine = await Machine.findOneAndUpdate(
-      { _id: req.params.id as string, company: companyId },
+    const { id } = req.params;
+
+    const updatedMachine = await MachineService.updateMachine(
+      id as string,
+      companyId,
       req.body,
-      { new: true, runValidators: true },
     );
-    if (!updatedMachine) {
-      res
-        .status(404)
-        .json({ message: "Máquina no encontrada o acceso denegado" });
-      return;
-    }
-    res.status(200).json(updatedMachine);
-  } catch (error) {
-    res.status(400).json({ message: "Error al actualizar la máquina", error });
+
+    res.status(200).json({
+      message: "Máquina actualizada correctamente",
+      machine: updatedMachine,
+    });
+  } catch (error: any) {
+    res.status(400).json({
+      message: error.message || "Error al actualizar la máquina",
+    });
   }
 };
 
@@ -138,17 +157,21 @@ export const getMachineHistory = async (
           path: "issue",
           match: { machine: id },
         })
-        .populate("sparePart"),
+        .populate({
+          path: "sparePart",
+          populate: { path: "catalogRef" },
+        }),
     ]);
 
     // Filtramos los repuestos que efectivamente pertenecen a esta máquina
     const filteredSpareParts = spareParts.filter((sp) => sp.issue !== null);
 
     // Calculamos el costo total acumulado de la máquina (RF-11 parcial)
-    const totalMaintenanceCost = filteredSpareParts.reduce(
-      (acc, curr) => acc + (curr.estimatedCost || 0),
-      0,
-    );
+    const totalMaintenanceCost = filteredSpareParts.reduce((acc, curr: any) => {
+      const unitPrice = curr.estimatedCost || curr.sparePart?.price || 0;
+      const quantity = curr.quantity || 1;
+      return acc + unitPrice * quantity;
+    }, 0);
 
     res.status(200).json({
       machineId: id,
@@ -163,5 +186,18 @@ export const getMachineHistory = async (
     res
       .status(500)
       .json({ message: "Error al generar la ficha histórica", error });
+  }
+};
+
+export const getPatterns = async (
+  req: Request,
+  res: Response,
+): Promise<void> => {
+  try {
+    const companyId = (req as any).companyId;
+    const patterns = await MachineService.getPatterns(companyId);
+    res.status(200).json(patterns);
+  } catch (error: any) {
+    res.status(500).json({ message: "Error al obtener patrones del catálogo" });
   }
 };

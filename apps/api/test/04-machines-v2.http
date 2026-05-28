@@ -1,0 +1,110 @@
+### Variables
+@apiUrl = http://localhost:3000/api
+@emailAdmin = juanchispita@fosforos.com
+@passwordAdmin = password123
+
+#@emailAdmin = admin@empresafantasma.com
+#@passwordAdmin = password123
+
+### 1B. LOGIN DEL ADMIN (Para obtener el Token)
+# @name loginAdmin
+POST {{apiUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "{{emailAdmin}}",
+  "password": "{{passwordAdmin}}"
+}
+
+###
+@tokenAdmin = {{loginAdmin.response.body.token}}
+
+
+### 1C. CREAR UNA MÁQUINA (NUEVA ARQUITECTURA DE 3 NIVELES)
+# @name createMachine
+POST {{apiUrl}}/machines
+Authorization: Bearer {{tokenAdmin}}
+Content-Type: application/json
+
+{
+  "brand": "Siemens",
+  "modelCode": "S7-1200",
+  "name": "Autómata Programable (PLC)",
+  "technicalSpecs": "24V DC, 14 DI / 10 DO",
+  "isPrivate": false,
+  "internalTag": "TAB-PLC-01",
+  "status": "Operativa",
+  "location": "Planta 1 - Sector A",
+  "productionLine": "Línea de Envasado",
+  "installationDate": "2025-10-15T00:00:00Z",
+  "purchasePrice": 1200,
+  "operationalNotes": "Revisar filtros cada 6 meses"
+}
+
+###
+# Capturamos el ID de la máquina creada para usarlo en los siguientes tests automáticamente
+@machineId = {{createMachine.response.body.machine._id}}
+
+
+### 2. OBTENER TODAS LAS MÁQUINAS 
+# El servicio debe hacer el "Flatten" y devolver los datos unidos de los 3 modelos
+GET {{apiUrl}}/machines
+Authorization: Bearer {{tokenAdmin}}
+
+
+### 3. ACTUALIZAR MÁQUINA (Afecta Nivel 3 y Nivel 2)
+# Nota: Usamos PUT según tu nuevo enrutador
+PUT {{apiUrl}}/machines/{{machineId}}
+Authorization: Bearer {{tokenAdmin}}
+Content-Type: application/json
+
+{
+  "location": "Planta 1 - Sector B (Movida)",
+  "status": "Mantenimiento",
+  "operationalNotes": "Se movió al sector B. Revisar el tablero con más frecuencia."
+}
+
+
+### 4. DESACTIVAR MÁQUINA (BORRADO LÓGICO)
+# Nota: Reemplaza al DELETE físico que tenías antes
+PATCH {{apiUrl}}/machines/{{machineId}}/deactivate
+Authorization: Bearer {{tokenAdmin}}
+
+
+### 5A. REGISTRO MAESTRO (Crear Empresa Fantasma + Admin Owner)
+# @name registerMaster
+POST {{apiUrl}}/auth/register-company
+Content-Type: application/json
+
+{
+  "companyName": "Empresa Fantasma SA",
+  "adminName": "Gaspar Blanco",
+  "email": "admin@empresafantasma.com",
+  "password": "password123"
+}
+
+
+### 5B. LOGIN DEL ADMIN FANTASMA (Para obtener el Token)
+# @name loginAdminFantasma
+POST {{apiUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "admin@empresafantasma.com",
+  "password": "password123"
+}
+
+###
+@tokenAdminFantasma = {{loginAdminFantasma.response.body.token}}
+
+
+### 5C. PRUEBA DE SEGURIDAD (Multi-tenancy)
+# Debería devolver lista vacía porque la máquina fue creada por juanchispita
+GET {{apiUrl}}/machines
+Authorization: Bearer {{tokenAdminFantasma}}
+
+
+### 5D. ELIMINAR MÁQUINA DE OTRA EMPRESA
+# Debería dar un error indicando que la máquina no existe o no pertenece a tu empresa
+PATCH {{apiUrl}}/machines/{{machineId}}/deactivate
+Authorization: Bearer {{tokenAdminFantasma}}

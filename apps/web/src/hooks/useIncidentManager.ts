@@ -9,6 +9,8 @@ export interface Incident {
   priority: "Baja" | "Media" | "Alta" | "Crítica";
   status: IssueStatus;
   createdAt: string;
+  reportedBy?: { _id: string; name: string; email: string };
+  assignedTo?: { _id: string; name: string; email: string };
 }
 
 export const useIncidentManager = () => {
@@ -21,7 +23,7 @@ export const useIncidentManager = () => {
       const response = await api.get("/issues");
       setIncidents(response.data);
     } catch (error) {
-      console.error("Error al cargar incidencias");
+      console.error("Error al cargar incidencias:", error);
     } finally {
       setIsLoading(false);
     }
@@ -29,12 +31,23 @@ export const useIncidentManager = () => {
 
   const updateStatus = async (id: string, newStatus: string) => {
     await api.patch(`/issues/${id}`, { status: newStatus });
-    fetchIncidents(); // Refrescar lista
+    fetchIncidents();
+  };
+
+  const assignTask = async (issueId: string, technicianId: string) => {
+    await api.patch(`/issues/assign`, { issueId, technicianId });
+    fetchIncidents();
   };
 
   useEffect(() => {
     fetchIncidents();
   }, []);
 
-  return { incidents, isLoading, updateStatus, refetch: fetchIncidents };
+  return {
+    incidents,
+    isLoading,
+    updateStatus,
+    assignTask,
+    refetch: fetchIncidents,
+  };
 };

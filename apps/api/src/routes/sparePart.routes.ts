@@ -1,7 +1,9 @@
 import { Router } from "express";
 import {
   getSpareParts,
+  getSparePartById,
   createSparePart,
+  getPatterns,
   updateSparePart,
   deleteSparePart,
   adjustStock,
@@ -23,12 +25,15 @@ const router = Router();
 router.use(authenticate, checkTenant);
 
 // --- CATÁLOGO ---
-router.get("/", getSpareParts);
+router.get("/catalog/", getSpareParts);
+router.get("/catalog/patterns", getPatterns);
+router.get("/catalog/:id", getSparePartById);
 router.post(
-  "/",
+  "/catalog/",
   authorize([UserRole.ADMIN, UserRole.COMPRAS, UserRole.MANTENIMIENTO]),
   createSparePart,
 );
+
 router.patch(
   "/catalog/:id",
   authorize([UserRole.ADMIN, UserRole.COMPRAS, UserRole.MANTENIMIENTO]),

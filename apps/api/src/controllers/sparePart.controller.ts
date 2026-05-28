@@ -5,34 +5,117 @@ import SparePartRequest, {
 } from "../models/SparePartRequest.js";
 import Issue, { IssueStatus } from "../models/Issue.js";
 import type { AnyArray } from "mongoose";
+import { SparePartService } from "../services/sparePart.service.js";
+
+// Asignarle el estado "EN_STOCK" a los pedidos de repuestos más antiguos al reponer el stock
+const allocateVirtualStock = async (
+  sparePartId: string,
+  actualStock: number,
+) => {
+  // Buscamos pedidos pendientes, ordenados por fecha más antigua
+  const pendingRequests = await SparePartRequest.find({
+    sparePart: sparePartId,
+    status: { $in: [SparePartStatus.COMPRADO, SparePartStatus.SIN_STOCK] },
+  }).sort({ createdAt: 1 });
+
+  let virtualStock = actualStock;
+  const updates = [];
+
+  // Iteramos aplicando la lógica de asignación temporal
+  for (const request of pendingRequests) {
+    if (virtualStock >= request.quantity) {
+      // El stock temporal cubre este pedido
+      request.status = SparePartStatus.EN_STOCK;
+
+      // Descontamos la cantidad de nuestra variable temporal (NUNCA del stock real de la base)
+      virtualStock -= request.quantity;
+
+      // Preparamos la promesa para guardar el cambio de estado
+      updates.push(request.save());
+      // else { break; } // Si queremos que no le de al siguiente si no cumple con el más viejo
+    }
+
+    // Ejecutamos todas las actualizaciones a la base de datos en paralelo
+    if (updates.length > 0) {
+      await Promise.all(updates);
+    }
+  }
+};
 
 // Lista de repuestos
-export const getSpareParts = async (req: Request, res: Response) => {
+export const getSpareParts = async (
+  req: Request,
+  res: Response,
+): Promise<void> => {
   try {
     const companyId = (req as any).companyId;
-    const parts = await SparePart.find({
-      company: companyId,
-      active: true,
-    }).populate("compatibleMachines", "name code");
-    res.json(parts);
-  } catch (error) {
-    res.status(500).json({ message: "Error al obtener catálogo" });
+    const parts = await SparePartService.getAllSpareParts(companyId);
+    res.status(200).json(parts);
+  } catch (error: any) {
+    res
+      .status(500)
+      .json({ message: error.message || "Error al obtener el inventario" });
   }
 };
 
-// Crear un respuesto
-export const createSparePart = async (req: Request, res: Response) => {
+// Obtener patrones para autocompletado (Niveles 1 y 2)
+export const getPatterns = async (
+  req: Request,
+  res: Response,
+): Promise<void> => {
   try {
     const companyId = (req as any).companyId;
-    console.log(req.body);
-    const newPart = new SparePart({ ...req.body, company: companyId });
-    await newPart.save();
-    res.status(201).json(newPart);
-  } catch (error) {
-    res.status(400).json({ message: "Error al crear repuesto" });
+    const patterns = await SparePartService.getPatterns(companyId);
+    res.status(200).json(patterns);
+  } catch (error: any) {
+    res.status(500).json({
+      message: error.message || "Error al obtener el catálogo de repuestos",
+    });
   }
 };
 
+// Obtener detalle completo de un repuesto por ID
+export const getSparePartById = async (
+  req: Request,
+  res: Response,
+): Promise<void> => {
+  try {
+    const companyId = (req as any).companyId;
+    const { id } = req.params;
+    const part = await SparePartService.getSparePartById(
+      id as string,
+      companyId,
+    );
+    res.status(200).json(part);
+  } catch (error: any) {
+    res
+      .status(404)
+      .json({ message: error.message || "Repuesto no encontrado" });
+  }
+};
+
+// Crear nuevo repuesto
+export const createSparePart = async (
+  req: Request,
+  res: Response,
+): Promise<void> => {
+  try {
+    const companyId = (req as any).companyId;
+    const data = { ...req.body };
+
+    const newPart = await SparePartService.createSparePart(companyId, data);
+    res.status(201).json({
+      message: "Repuesto registrado exitosamente",
+      sparePart: newPart,
+    });
+  } catch (error: any) {
+    res
+      .status(400)
+      .json({ message: error.message || "Error al crear el repuesto" });
+  }
+};
+
+// TODO: ACTUALIZAR TODAS ESTAS FUNCIONES
 // Actualizar un repuesto
 export const updateSparePart = async (req: Request, res: Response) => {
   try {
@@ -92,8 +175,8 @@ export const adjustStock = async (req: Request, res: Response) => {
 
     part.stockQuantity += quantity;
     if (part.stockQuantity < 0) part.stockQuantity = 0;
-
     await part.save();
+    await allocateVirtualStock(part._id.toString(), part.stockQuantity);
     res.json(part);
   } catch (error) {
     res.status(400).json({ message: "Error al ajustar stock" });
@@ -253,16 +336,19 @@ export const getSparePartRequests = async (req: Request, res: Response) => {
     }
 
     const requests = await SparePartRequest.find(filter)
-      .populate("sparePart", "modelName brand price") // Datos del catálogo
-      .populate("requestedBy", "name email") // Datos del técnico (usando la ref que sugeriste)
+      .populate({
+        path: "sparePart",
+        populate: { path: "catalogRef" },
+      })
+      .populate("requestedBy", "name email")
       .populate({
         path: "issue",
         populate: {
           path: "machine",
-          select: "name code", // Para saber en qué máquina se va a usar
+          populate: { path: "catalogRef" },
         },
       })
-      .sort({ createdAt: -1 }); // Los más nuevos primero
+      .sort({ createdAt: -1 });
 
     res.json(requests);
   } catch (error) {

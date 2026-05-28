@@ -6,7 +6,10 @@ import {
   Tablet,
   Wrench,
   PackageSearch,
-  Image as ImageIcon 
+  Image as ImageIcon,
+  AlertCircle,
+  CheckCircle2,
+  UserCheck,
 } from "lucide-react";
 import { useIncidentDetail } from "../../hooks/useIncidentDetail";
 
@@ -16,23 +19,41 @@ interface Props {
 }
 
 const IncidentDetailModal = ({ incidentId, onClose }: Props) => {
-  const { incident, spareParts, isLoading, error } = useIncidentDetail(incidentId);
+  const { incident, spareParts, isLoading, error } =
+    useIncidentDetail(incidentId);
+  //console.log(incident);
+  //console.log(spareParts);
 
   if (!incidentId) return null;
 
-  // 1. Agrupamos los repuestos
+  // 1. Agrupamos por estado y unificamos cantidades de piezas idénticas
   const groupedParts = (Array.isArray(spareParts) ? spareParts : []).reduce(
     (acc, part) => {
       const status = part.status || "Desconocido";
-      if (!acc[status]) acc[status] = [];
-      acc[status].push(part);
+
+      // Si el estado no existe en nuestro acumulador, creamos un objeto vacío
+      if (!acc[status]) acc[status] = {};
+
+      // Tomamos el ID único del repuesto físico para saber si ya lo contamos
+      const partId = part.sparePart?._id || "repuesto_desconocido";
+
+      if (!acc[status][partId]) {
+        // Si no existe este repuesto en este estado, lo agregamos (clonándolo para no mutar el original)
+        acc[status][partId] = { ...part };
+      } else {
+        // Si ya existe, simplemente le sumamos la cantidad del nuevo pedido
+        acc[status][partId].quantity += part.quantity;
+      }
+
       return acc;
     },
-    {} as Record<string, any[]>,
+    {} as Record<string, Record<string, any>>, // Estructura: { "Aceptado": { "id_123": {...}, "id_456": {...} } }
   );
 
-  // 2. SOLUCIÓN: Creamos una variable con el tipo estricto ANTES del return (HTML)
-  const groupedEntries: [string, any[]][] = Object.entries(groupedParts);
+  // 2. Convertimos el diccionario doble a un array iterable para poder renderizarlo en el HTML
+  const groupedEntries: [string, any[]][] = Object.entries(groupedParts).map(
+    ([status, partsDict]) => [status, Object.values(partsDict)],
+  );
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
@@ -54,8 +75,13 @@ const IncidentDetailModal = ({ incidentId, onClose }: Props) => {
           {error ? (
             <div className="flex flex-col items-center justify-center py-10 text-red-500">
               <p className="text-lg font-bold">No se pudo cargar</p>
-              <p className="text-sm text-red-400 mt-2 bg-red-50 p-3 rounded">{error}</p>
-              <p className="text-xs text-gray-400 mt-4">Verifica en consola (F12) o prueba con un rol de Administrador/Técnico.</p>
+              <p className="text-sm text-red-400 mt-2 bg-red-50 p-3 rounded">
+                {error}
+              </p>
+              <p className="text-xs text-gray-400 mt-4">
+                Verifica en consola (F12) o prueba con un rol de
+                Administrador/Técnico.
+              </p>
             </div>
           ) : isLoading || !incident ? (
             <div className="flex flex-col items-center justify-center py-10 text-gray-500">
@@ -67,18 +93,21 @@ const IncidentDetailModal = ({ incidentId, onClose }: Props) => {
           ) : (
             <>
               {/* SECCIÓN 1: Info General */}
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div className="bg-gray-50 p-4 rounded border border-gray-200">
                   <p className="text-[10px] font-bold text-gray-400 uppercase flex items-center mb-1">
                     <Tablet className="w-3 h-3 mr-1" /> Máquina Afectada
                   </p>
-                  <p className="font-bold text-gray-800">
-                    {incident.machine?.name}
+                  <p className="font-bold text-gray-800 truncate">
+                    {incident.machine?.internalTag} -{" "}
+                    {incident.machine?.catalogRef?.name}
                   </p>
                   <p className="text-xs text-gray-500 font-mono">
-                    {incident.machine?.code}
+                    {incident.machine?.catalogRef?.brand}{" "}
+                    {incident.machine?.catalogRef?.modelCode}
                   </p>
                 </div>
+
                 <div className="bg-gray-50 p-4 rounded border border-gray-200">
                   <p className="text-[10px] font-bold text-gray-400 uppercase flex items-center mb-1">
                     <User className="w-3 h-3 mr-1" /> Reportado por
@@ -86,8 +115,22 @@ const IncidentDetailModal = ({ incidentId, onClose }: Props) => {
                   <p className="font-bold text-gray-800">
                     {incident.reportedBy?.name || "Desconocido"}
                   </p>
-                  <p className="text-xs text-gray-500">
+                  <p className="text-xs text-gray-500 truncate">
                     {incident.reportedBy?.email}
+                  </p>
+                </div>
+
+                <div className="bg-blue-50/50 p-4 rounded border border-blue-100">
+                  <p className="text-[10px] font-bold text-blue-500 uppercase flex items-center mb-1">
+                    <UserCheck className="w-3 h-3 mr-1" /> Asignado a
+                  </p>
+                  <p className="font-bold text-blue-900">
+                    {incident.assignedTo?.name || "Sin asignar"}
+                  </p>
+                  <p className="text-xs text-blue-600/70 truncate">
+                    {incident.assignedTo
+                      ? "Responsable de reparación"
+                      : "Pendiente de jefe"}
                   </p>
                 </div>
               </div>
@@ -107,12 +150,13 @@ const IncidentDetailModal = ({ incidentId, onClose }: Props) => {
                 {incident.imageUrl && (
                   <div>
                     <p className="text-xs font-bold text-gray-700 uppercase mb-1 flex items-center">
-                      <ImageIcon className="w-3 h-3 mr-1" /> Evidencia Fotográfica
+                      <ImageIcon className="w-3 h-3 mr-1" /> Evidencia
+                      Fotográfica
                     </p>
                     <div className="bg-gray-50 border border-gray-200 p-2 rounded flex justify-center mt-1">
-                      <img 
-                        src={incident.imageUrl} 
-                        alt="Evidencia de la falla" 
+                      <img
+                        src={incident.imageUrl}
+                        alt="Evidencia de la falla"
                         className="max-h-64 object-contain rounded shadow-sm border border-gray-200"
                       />
                     </div>
@@ -134,7 +178,8 @@ const IncidentDetailModal = ({ incidentId, onClose }: Props) => {
               {/* SECCIÓN 3: Repuestos Solicitados */}
               <div>
                 <p className="text-xs font-bold text-gray-700 uppercase mb-3 flex items-center border-b pb-2">
-                  <PackageSearch className="w-4 h-4 mr-1" /> Piezas y Repuestos Involucrados
+                  <PackageSearch className="w-4 h-4 mr-1" /> Piezas y Repuestos
+                  Involucrados
                 </p>
 
                 {spareParts.length === 0 ? (
@@ -156,24 +201,30 @@ const IncidentDetailModal = ({ incidentId, onClose }: Props) => {
                           </span>
                         </div>
                         <ul className="divide-y divide-gray-100">
-                          {parts.map((p: any) => (
-                            <li
-                              key={p._id}
-                              className="p-3 text-sm flex justify-between items-center hover:bg-gray-50"
-                            >
-                              <div>
-                                <span className="font-bold text-gray-800">
-                                  {p.sparePart?.modelName}
+                          {parts.map((p: any) => {
+                            // Extraemos el Nivel 1 (Catálogo) de forma segura
+                            const catalog = p.sparePart?.catalogRef;
+
+                            return (
+                              <li
+                                key={p._id}
+                                className="p-3 text-sm flex justify-between items-center hover:bg-gray-50"
+                              >
+                                <div>
+                                  <span className="font-bold text-gray-800">
+                                    {catalog?.name || "Repuesto no indexado"}
+                                  </span>
+                                  <span className="text-gray-500 text-xs ml-2">
+                                    ({catalog?.brand || "S/M"} - PN:{" "}
+                                    {catalog?.partNumber || "S/N"})
+                                  </span>
+                                </div>
+                                <span className="font-mono bg-gray-800 text-white px-2 py-1 rounded text-xs">
+                                  x{p.quantity} unid.
                                 </span>
-                                <span className="text-gray-500 text-xs ml-2">
-                                  ({p.sparePart?.brand})
-                                </span>
-                              </div>
-                              <span className="font-mono bg-gray-800 text-white px-2 py-1 rounded text-xs">
-                                x{p.quantity} unid.
-                              </span>
-                            </li>
-                          ))}
+                              </li>
+                            );
+                          })}
                         </ul>
                       </div>
                     ))}

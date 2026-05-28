@@ -23,3 +23,7 @@ build/
 
 # TypeScript
 tsconfig.tsbuildinfo
+
+*getAllCode*.*
+code_backend.txt
+code_frontend.txt

@@ -3,13 +3,27 @@ import api from "../api/axios";
 
 export interface SparePart {
   _id: string;
-  modelName: string;
-  brand: string;
-  description: string;
+  internalCode: string; // Nivel 3: SKU interno
   stockQuantity: number;
+  minStock: number;
   price: number;
-  compatibleMachines: { _id: string; name: string; code: string }[];
+  location?: string;
   active: boolean;
+
+  // Nivel 1: Catálogo Global
+  brand: string;
+  partNumber: string; // Reemplaza a modelCode
+  name: string; // Reemplaza a description
+  technicalSpecs?: string;
+  isVerified?: boolean;
+  isPrivate?: boolean;
+
+  // Nivel 2: Perfil Privado
+  customImageUrl?: string;
+  manuals?: string[];
+  images?: string[];
+  compatibleMachines?: any[]; // Lo hacemos opcional (?)
+  supplierLinks?: string[];
 }
 
 export const useSpareParts = () => {
@@ -19,7 +33,7 @@ export const useSpareParts = () => {
   const fetchSpareParts = useCallback(async () => {
     try {
       setIsLoading(true);
-      const response = await api.get("/spare-parts");
+      const response = await api.get("/spare-parts/catalog");
       setSpareParts(response.data);
     } catch (error) {
       console.error("Error al cargar el catálogo de repuestos:", error);
@@ -29,7 +43,7 @@ export const useSpareParts = () => {
   }, []);
 
   const createSparePart = async (data: Partial<SparePart>) => {
-    await api.post("/spare-parts", data);
+    await api.post("/spare-parts/catalog", data);
     fetchSpareParts();
   };
 

@@ -14,6 +14,7 @@ import HistoryPage from "./pages/HistoryPage";
 import PreventivePage from "./pages/PreventivePage";
 import EmployeePage from "./pages/EmployeePage";
 import ResetPasswordPage from "./pages/ResetPasswordPage";
+import SparePartDetailPage from "./pages/SparePartDetailPage";
 
 function App() {
   const { isAuthenticated } = useAuthStore();
@@ -72,6 +73,7 @@ function App() {
           <Route path="/preventivo" element={<PreventivePage />} />
           {/* Repuestos */}
           <Route path="/repuestos" element={<SparePartsPage />} />
+          <Route path="/repuestos/:id" element={<SparePartDetailPage />} />
 
           {/* Gestión de Compras */}
           <Route path="/compras" element={<PurchaseManagementPage />} />

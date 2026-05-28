@@ -12,9 +12,10 @@ const MachinesPage = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   const columns = [
-    { header: "Código", accessor: "code" as keyof Machine },
-    { header: "Nombre", accessor: "name" as keyof Machine },
-    { header: "Tipo", accessor: "type" as keyof Machine },
+    { header: "TAG", accessor: "internalTag" as keyof Machine },
+    { header: "Marca", accessor: "brand" as keyof Machine },
+    { header: "Modelo", accessor: "modelCode" as keyof Machine },
+    { header: "Equipo", accessor: "name" as keyof Machine },
     {
       header: "Estado",
       accessor: (item: Machine) => (
@@ -26,7 +27,9 @@ const MachinesPage = () => {
                 ? "bg-red-100 text-red-700"
                 : item.status === "Mantenimiento"
                   ? "bg-yellow-100 text-yellow-700"
-                  : "bg-gray-100 text-gray-700"
+                  : item.status === "Apagada" || item.status === "No Instalada"
+                    ? "bg-gray-200 text-gray-700"
+                    : "bg-gray-100 text-gray-700"
           }`}
         >
           {item.status}
@@ -34,7 +37,6 @@ const MachinesPage = () => {
       ),
     },
     { header: "Ubicación", accessor: "location" as keyof Machine },
-    { header: "Acciones" },
   ];
 
   return (
