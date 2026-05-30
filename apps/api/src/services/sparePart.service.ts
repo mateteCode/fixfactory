@@ -4,8 +4,12 @@ import SparePartProfile from "../models/SparePartProfile.js";
 import SparePart from "../models/SparePart.js";
 
 export class SparePartService {
+  //[✔] Obtener todos los repuestos
   static async getAllSpareParts(companyId: string) {
-    const parts = await SparePart.find({ company: companyId, active: true })
+    const parts = await SparePart.find({
+      company: companyId,
+      active: true,
+    })
       .populate("catalogRef")
       .lean();
 
@@ -27,7 +31,7 @@ export class SparePartService {
     });
   }
 
-  // 2. OBTENER POR ID (Ficha técnica completa)
+  //[✔] Obtener toda la ficha técnica de un Repuesto por ID
   static async getSparePartById(partId: string, companyId: string) {
     const part = await SparePart.findOne({ _id: partId, company: companyId })
       .populate("catalogRef")
@@ -40,7 +44,7 @@ export class SparePartService {
       catalogRef: pattern._id,
       company: companyId,
     })
-      .populate("compatibleMachines", "name internalTag brand modelCode") // Traemos info básica de las máquinas compatibles
+      .populate("compatibleMachines", "name internalTag brand modelCode")
       .lean();
 
     return {
@@ -70,6 +74,7 @@ export class SparePartService {
     };
   }
 
+  // [✔] Crear Repuesto
   static async createSparePart(companyId: string, data: any) {
     // Escudo de validación
     if (!data.brand || !data.partNumber || !data.name) {
@@ -77,6 +82,8 @@ export class SparePartService {
         "Faltan datos de fábrica: marca, número de parte y nombre son obligatorios.",
       );
     }
+
+    let profileCustomImage = data.customImageUrl;
 
     // Buscar o Crear el Patrón Global (Nivel 1)
     let pattern = await SparePartPattern.findOne({
@@ -92,7 +99,9 @@ export class SparePartService {
         technicalSpecs: data.technicalSpecs,
         createdByCompany: companyId,
         isPrivate: data.isPrivate || false,
+        defaultImageUrl: data.customImageUrl || "",
       });
+      profileCustomImage = "";
     }
 
     // Buscar o Crear el Perfil Privado (Nivel 2)
@@ -105,7 +114,7 @@ export class SparePartService {
       profile = await SparePartProfile.create({
         catalogRef: pattern._id,
         company: companyId,
-        customImageUrl: data.customImageUrl || "",
+        customImageUrl: profileCustomImage || "",
         manuals: data.manuals || [],
         images: data.images || [],
         compatibleMachines: data.compatibleMachines || [],
@@ -113,7 +122,7 @@ export class SparePartService {
       });
     } else {
       // Actualizamos el perfil con los nuevos archivos/datos que subió el usuario
-      if (data.customImageUrl) profile.customImageUrl = data.customImageUrl;
+      if (profileCustomImage) profile.customImageUrl = profileCustomImage;
       if (data.manuals) profile.manuals = data.manuals;
       if (data.images) profile.images = data.images;
       if (data.compatibleMachines)
@@ -148,6 +157,7 @@ export class SparePartService {
     return this.getSparePartById(newPart._id.toString(), companyId);
   }
 
+  // [✔] Obtener Patrones de Repuestos
   static async getPatterns(companyId: string) {
     const patterns = await SparePartPattern.find({
       $or: [{ isVerified: true }, { createdByCompany: companyId }],

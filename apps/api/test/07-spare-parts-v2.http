@@ -4,7 +4,7 @@
 # Reemplazá estos valores con IDs reales de tu base de datos después de las primeras pruebas
 @machineId = 69f4629d69c610fda7b50fda
 @issueId = 6a002689de3fb465c6163330
-@sparePartId = {{createPart.response.body._id}}
+@sparePartId = 6a1932a77a7eea8af891cb48
 @requestId = {{createRequest.response.body._id}}
 
 ### 0. LOGIN (Obtener Token)
@@ -20,6 +20,10 @@ Content-Type: application/json
 ###
 @token = {{login.response.body.token}}
 
+### OBTENER TODAS LAS MÁQUINAS 
+GET {{apiUrl}}/machines
+Authorization: Bearer {{token}}
+
 
 # ==========================================
 # 1. GESTIÓN DEL CATÁLOGO (Inventario)
@@ -27,21 +31,22 @@ Content-Type: application/json
 
 ### 1.1 Crear un nuevo repuesto en el catálogo
 # @name createPart
-POST {{apiUrl}}/spare-parts
+POST {{apiUrl}}/spare-parts/catalog
 Authorization: Bearer {{token}}
 Content-Type: application/json
 
 {
-  "model": "SKF-6205-2Z",
+  "partNumber": "SKF-6205-2Z",
   "brand": "SKF",
+  "name": "Rodamiento de bolas sellado",
   "description": "Rodamiento de bolas sellado para motor principal",
   "stockQuantity": 10,
-  "price": 1500.50,
-  "compatibleMachines": ["{{machineId}}"]
+  "price": 150.50
 }
 
+###
 ### 1.2 Obtener todo el catálogo
-GET {{apiUrl}}/spare-parts
+GET {{apiUrl}}/spare-parts/catalog
 Authorization: Bearer {{token}}
 
 ### 1.3 Ajustar stock manualmente (Ej: Auditoría de almacén +5 unidades)
@@ -59,7 +64,7 @@ Authorization: Bearer {{token}}
 Content-Type: application/json
 
 {
-  "price": 1750.00,
+  "price": 17.99,
   "description": "Rodamiento SKF reforzado - Alta temperatura"
 }
 

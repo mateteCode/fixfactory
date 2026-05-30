@@ -42,7 +42,7 @@ const allocateVirtualStock = async (
   }
 };
 
-// Lista de repuestos
+// [✔] Lista de repuestos
 export const getSpareParts = async (
   req: Request,
   res: Response,
@@ -58,7 +58,7 @@ export const getSpareParts = async (
   }
 };
 
-// Obtener patrones para autocompletado (Niveles 1 y 2)
+// [✔] Obtener patrones de repuestos para autocompletado
 export const getPatterns = async (
   req: Request,
   res: Response,
@@ -74,7 +74,7 @@ export const getPatterns = async (
   }
 };
 
-// Obtener detalle completo de un repuesto por ID
+// [✔] Obtener detalle completo de un repuesto por ID
 export const getSparePartById = async (
   req: Request,
   res: Response,
@@ -94,7 +94,7 @@ export const getSparePartById = async (
   }
 };
 
-// Crear nuevo repuesto
+// [✔] Crear Repuesto
 export const createSparePart = async (
   req: Request,
   res: Response,
@@ -115,8 +115,7 @@ export const createSparePart = async (
   }
 };
 
-// TODO: ACTUALIZAR TODAS ESTAS FUNCIONES
-// Actualizar un repuesto
+// [!] Actualizar Repuesto (Editarla)
 export const updateSparePart = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
@@ -137,7 +136,7 @@ export const updateSparePart = async (req: Request, res: Response) => {
   }
 };
 
-// Borrado lógioo del repuesto
+// [!] Borrado lógico Repuesto (Editarla)
 export const deleteSparePart = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
@@ -157,12 +156,13 @@ export const deleteSparePart = async (req: Request, res: Response) => {
   }
 };
 
-// Incremento/Decremento manual de stock
+// [✔] Incremento/Decremento manual de stock (Editarla)
 export const adjustStock = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
     const { quantity } = req.body; // Puede ser positivo o negativo
     const companyId = (req as any).companyId;
+
     const part = await SparePart.findOne({
       _id: id as any,
       company: companyId,
@@ -183,7 +183,7 @@ export const adjustStock = async (req: Request, res: Response) => {
   }
 };
 
-// Crear un pedido de repuestos (RF-09)
+// [✔] Crear un pedido de repuesto
 export const createSparePartRequest = async (req: Request, res: Response) => {
   try {
     const companyId = (req as any).companyId;
@@ -208,10 +208,6 @@ export const createSparePartRequest = async (req: Request, res: Response) => {
       return;
     }
 
-    //const part = await SparePart.findById(partId);
-    //if (!part) return res.status(404).json({ message: "Repuesto no existe" });
-
-    // Determinar estado inicial según stock
     const status =
       part.stockQuantity >= quantity
         ? SparePartStatus.SOLICITADO
@@ -222,7 +218,7 @@ export const createSparePartRequest = async (req: Request, res: Response) => {
       requestedBy: userId,
       company: companyId,
       status,
-      estimatedCost: part.price, // Snapshot del precio actual
+      estimatedCost: part.price,
     });
 
     await newRequest.save();

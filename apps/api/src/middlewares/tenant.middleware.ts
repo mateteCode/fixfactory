@@ -1,5 +1,6 @@
 import type { Request, Response, NextFunction } from "express";
 
+// [✔] Obtiene el id de la compañia asociada del usuario sacada del token decodificado
 export const checkTenant = (
   req: Request,
   res: Response,

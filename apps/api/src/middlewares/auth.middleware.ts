@@ -1,6 +1,7 @@
 import type { Request, Response, NextFunction } from "express";
 import jwt from "jsonwebtoken";
 
+// [✔] Verifica el token lo decodifica y lo inserta en el req
 export const authenticate = (
   req: Request,
   res: Response,

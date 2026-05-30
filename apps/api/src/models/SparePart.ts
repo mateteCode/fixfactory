@@ -6,9 +6,9 @@ export interface ISparePart extends Document {
   company: Types.ObjectId;
   internalCode?: string; // SKU interno opcional (Ej: REP-001)
   stockQuantity: number;
-  minStock: number; // ¡Nuevo! Para generar alertas de re-compra futuras
+  minStock: number;
   price: number;
-  location?: string; // Ej: "Estantería A3"
+  location?: string;
   active: boolean;
   createdAt: Date;
 }

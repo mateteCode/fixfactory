@@ -49,7 +49,7 @@ Content-Type: application/json
 GET {{apiUrl}}/machines
 Authorization: Bearer {{tokenAdmin}}
 
-@machineId = 69f4634f69c610fda7b50fdf
+@machineId = 6a18853ed881c19e5b3d4ab5
 ### 1. REPORTAR NUEVA INCIDENCIA (Operario)
 # @name createIssue
 POST {{apiUrl}}/issues
@@ -65,8 +65,7 @@ Content-Type: application/json
 ###
 @issueId = {{createIssue.response.body._id}}
 
-### 2. OBTENER TODAS LAS INCIDENCIAS (Filtro por empresa automático)
-# Debe traer la incidencia recién creada
+### 2. OBTENER TODAS LAS INCIDENCIAS DE LA EMPRESA
 GET {{apiUrl}}/issues
 Authorization: Bearer {{tokenOperario}}
 
@@ -96,8 +95,6 @@ Content-Type: application/json
   "resolutionDetails": "Se reemplazó el sello y se purgó el sistema hidráulico."
 }
 
-
-### PRUEBAS DE SEGURIDAD (Tenant Isolation)
 
 ### 6. INTENTO DE REPORTE SIN TOKEN
 # Debe devolver 401 Unauthorized[cite: 13]

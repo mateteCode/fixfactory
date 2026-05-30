@@ -25,31 +25,71 @@ const router = Router();
 router.use(authenticate, checkTenant);
 
 // --- CATÁLOGO ---
-router.get("/catalog/", getSpareParts);
-router.get("/catalog/patterns", getPatterns);
-router.get("/catalog/:id", getSparePartById);
+// [✔] Obtener todos los repuestos: GET api/spare-parts/catalog
+// Roles: Compras, Mantenimiento, Técnico, Admin
+router.get(
+  "/catalog/",
+  authorize([
+    UserRole.ADMIN,
+    UserRole.COMPRAS,
+    UserRole.MANTENIMIENTO,
+    UserRole.TECNICO,
+  ]),
+  getSpareParts,
+);
+
+// [✔] Obtener catálogo : GET api/spare-parts/catalog/patterns
+// Roles: Compras, Mantenimiento, Admin
+router.get(
+  "/catalog/patterns",
+  authorize([UserRole.ADMIN, UserRole.COMPRAS, UserRole.MANTENIMIENTO]),
+  getPatterns,
+);
+
+// [✔] Obtener Repuesto por ID : GET api/spare-parts/catalog/:id
+// Roles: Compras, Mantenimiento, Técnico, Admin
+router.get(
+  "/catalog/:id",
+  authorize([
+    UserRole.ADMIN,
+    UserRole.COMPRAS,
+    UserRole.MANTENIMIENTO,
+    UserRole.TECNICO,
+  ]),
+  getSparePartById,
+);
+
+// [✔] Crear Repuesto: POST api/spare-parts/catalog
+// Roles: Compras, Mantenimiento, Admin
 router.post(
   "/catalog/",
   authorize([UserRole.ADMIN, UserRole.COMPRAS, UserRole.MANTENIMIENTO]),
   createSparePart,
 );
 
+// [✔] Cambiar algún dato del repuesto: PATCH api/spare-parts/catalog/:id
+// Roles: Compras, Mantenimiento, Admin
 router.patch(
   "/catalog/:id",
   authorize([UserRole.ADMIN, UserRole.COMPRAS, UserRole.MANTENIMIENTO]),
   updateSparePart,
 );
 router.delete("/catalog/:id", authorize([UserRole.ADMIN]), deleteSparePart);
+
+// [✔] Incrementar/Decrementar el stock de un repuesto: POST api/spare-parts/catalog/:id/stock
+// Roles: Compras, Admin
 router.post(
   "/catalog/:id/stock",
-  authorize([UserRole.ADMIN, UserRole.COMPRAS, UserRole.MANTENIMIENTO]),
+  authorize([UserRole.ADMIN, UserRole.COMPRAS]),
   adjustStock,
 );
 
 // --- SOLICITUDES (PEDIDOS) ---
+// [✔] Crear un pedido de repuesto: POST api/spare-parts/request
+// Roles: Técnico, Mantenimiento, Admin
 router.post(
   "/request",
-  authorize([UserRole.TECNICO, UserRole.ADMIN]),
+  authorize([UserRole.TECNICO, UserRole.ADMIN, UserRole.MANTENIMIENTO]),
   createSparePartRequest,
 );
 router.patch(

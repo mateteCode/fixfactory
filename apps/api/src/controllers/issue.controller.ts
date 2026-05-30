@@ -5,7 +5,7 @@ import Issue from "../models/Issue.js";
 import { IssueStatus } from "../models/Issue.js";
 import { UserRole } from "../models/User.js";
 
-// Helper local para verificar y restablecer la máquina si corresponde
+// [✔] Helper local para verificar y restablecer la máquina si corresponde
 const syncMachineStatus = async (machineId: any, companyId: any) => {
   // Contamos si queda alguna incidencia que NO esté cerrada para esta máquina
   const incidenciasActivas = await Issue.countDocuments({
@@ -26,7 +26,7 @@ const syncMachineStatus = async (machineId: any, companyId: any) => {
   }
 };
 
-// Crear una incidencia (RF-03) [cite: 1398]
+// [✔] Crear una incidencia
 export const createIssue = async (
   req: Request,
   res: Response,
@@ -34,29 +34,13 @@ export const createIssue = async (
   try {
     const companyId = (req as any).companyId;
     const userId = (req as any).user.id;
-    /*
-    const machineId = (req as any).body.machine;
 
-    // Validación si la máquina pertenece a la empresa del operario
-    const machine = await Machine.findOne({
-      _id: machineId,
-      company: companyId,
-    });
-
-    if (!machine) {
-      res.status(403).json({
-        message:
-          "Operación no permitida: La máquina no pertenece a tu empresa o no existe.",
-      });
-      return;
-    }
-    */
     const machine = (req as any).validatedResource;
 
     const newIssue = new Issue({
       ...req.body,
       company: companyId,
-      reportedBy: userId, // Trazabilidad: quién la creó
+      reportedBy: userId,
     });
     const savedIssue = await newIssue.save();
 
@@ -65,16 +49,11 @@ export const createIssue = async (
       { _id: machine._id, company: companyId },
       { status: "En Falla" },
     );
-    console.log(
-      `[Automatización] Máquina ${machine._id} cambiada a 'En Falla'.`,
-    );
 
-    // Simulación de Notificación Automática (RF-04)
+    // Disparar notificación
     console.log(
       `Notification sent to Maintenance Lead: New issue ${savedIssue._id} created.`,
     );
-
-    // Disparar notificación asíncrona (RF-04)
     sendIssueNotification({
       machineName: machine?.name || "Desconocida",
       priority: savedIssue.priority,
@@ -88,12 +67,11 @@ export const createIssue = async (
   }
 };
 
-// Obtener todas las incidencias (con población de datos de la máquina)
+// [✔] Obtener todas las incidencias
 export const getIssues = async (req: Request, res: Response): Promise<void> => {
   try {
     const companyId = (req as any).companyId;
 
-    // Buscamos incidencias que pertenezcan a ese ID de objeto
     const issues = await Issue.find({ company: companyId })
       .populate({
         path: "machine",
@@ -109,7 +87,7 @@ export const getIssues = async (req: Request, res: Response): Promise<void> => {
   }
 };
 
-// Obtener una incidencia por ID con detalles de la máquina
+// [✔] Obtener una incidencia por ID
 export const getIssueById = async (
   req: Request,
   res: Response,
@@ -139,7 +117,7 @@ export const getIssueById = async (
   }
 };
 
-// Actualizar estado o detalles de la incidencia (RF-05)
+// [✔] Actualizar estado o detalles de la incidencia
 export const updateIssue = async (
   req: Request,
   res: Response,
@@ -151,14 +129,12 @@ export const updateIssue = async (
     // Armamos el objeto de actualización
     const updateData: any = { status, description, priority };
 
-    console.log(status);
-    // Si el estado cambia a CERRADO, guardamos la fecha de cierre
     if (status === IssueStatus.CERRADO) {
       updateData.closedAt = new Date();
     }
 
     const updatedIssue = await Issue.findOneAndUpdate(
-      { _id: req.params.id as string, company: companyId }, // Filtramos por ID Y por Empresa
+      { _id: req.params.id as string, company: companyId },
       updateData,
       { new: true, runValidators: true },
     );
@@ -170,7 +146,7 @@ export const updateIssue = async (
       return;
     }
 
-    // Si se cambia el estado a Cerrado verificadar si se puede cambiar el estado de la maquina
+    // Verificar si se puede cambiar el estado de la maquina
     if (status === IssueStatus.CERRADO) {
       await syncMachineStatus(updatedIssue.machine, companyId);
       // Podríamos disparar otra notificación en el futuro
@@ -185,7 +161,7 @@ export const updateIssue = async (
   }
 };
 
-// Finalizar reparación y cerrar incidencia (RF-06)
+// [!] Finalizar reparación y cerrar incidencia
 export const closeIssue = async (
   req: Request,
   res: Response,
@@ -199,7 +175,7 @@ export const closeIssue = async (
       {
         technicalDiagnosis,
         resolutionDetails,
-        status: IssueStatus.CERRADO, // Estado final del flujo
+        status: IssueStatus.CERRADO,
         closedAt: new Date(),
       },
       { new: true, runValidators: true },
@@ -210,7 +186,7 @@ export const closeIssue = async (
       return;
     }
 
-    // Al cerrar definitivamente, disparamos el chequeo de la máquina
+    // Disparamos el chequeo de la máquina
     await syncMachineStatus(updatedIssue.machine, companyId);
 
     res.status(200).json(updatedIssue);
@@ -219,7 +195,7 @@ export const closeIssue = async (
   }
 };
 
-// El jefe de mantenimiento asigna la tarea/repación a un técnico o si mismo
+// [✔] El jefe de mantenimiento asigna la tarea/repación a un técnico o si mismo
 export const assignIssue = async (
   req: Request,
   res: Response,

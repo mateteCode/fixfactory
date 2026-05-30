@@ -1,6 +1,5 @@
 import { Schema, model, Document, Types } from "mongoose";
 
-// Definición de estados según la minuta de relevamiento
 export enum IssueStatus {
   PENDIENTE = "Pendiente",
   EN_PROCESO = "En Proceso",
@@ -18,17 +17,18 @@ export enum IssuePriority {
 }
 
 export interface IIssue extends Document {
-  machine: Types.ObjectId; // Referencia a la máquina
-  description: string; // Descripción del problema
-  priority: IssuePriority; // Prioridad
-  status: IssueStatus; // Estado del ciclo de vida
+  machine: Types.ObjectId;
+  description: string; // Descripción del operario del problema
+  priority: IssuePriority;
+  status: IssueStatus;
   reportedBy: Types.ObjectId; // Operario que detectó la falla
-  imageUrl?: string; // URL de la foto del problema
+  imageUrl?: string; // URL de la foto del problema sacada por el operario
   technicalDiagnosis?: string; // Diagnóstico del técnico
   resolutionDetails?: string; // Qué se hizo para arreglarlo
   closedAt?: Date; // Fecha de cierre para métricas MTTR
   company: Types.ObjectId;
-  assignedTo?: Types.ObjectId;
+  assignedTo?: Types.ObjectId; // Técnico al que se le asignó la reparación
+  repairImagesUrl?: string[]; // URL de las imagenes aportadas por el técnico
 }
 
 const issueSchema = new Schema<IIssue>(
@@ -57,6 +57,7 @@ const issueSchema = new Schema<IIssue>(
       index: true,
     },
     assignedTo: { type: Schema.Types.ObjectId, ref: "User" },
+    repairImagesUrl: [{ type: String }],
   },
   {
     timestamps: true, // Para cumplir con la trazabilidad y auditoría (RF-14)

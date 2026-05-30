@@ -2,7 +2,7 @@ import mongoose, { Schema, Document } from "mongoose";
 
 export interface ISparePartPattern extends Document {
   brand: string;
-  partNumber: string; // Ej: 6204-2Z (Reemplaza a modelCode)
+  partNumber: string;
   name: string;
   technicalSpecs?: string;
   defaultImageUrl?: string;

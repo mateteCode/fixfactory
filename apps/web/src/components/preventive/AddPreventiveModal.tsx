@@ -1,14 +1,17 @@
 import { useState } from "react";
 import { X } from "lucide-react";
 import { useAddPreventive } from "../../hooks/usePreventive";
-import { useMachines } from "../../hooks/useMachines"; 
+import { useMachines } from "../../hooks/useMachines";
 
 interface AddPreventiveModalProps {
   isOpen: boolean;
   onClose: () => void;
 }
 
-export const AddPreventiveModal = ({ isOpen, onClose }: AddPreventiveModalProps) => {
+export const AddPreventiveModal = ({
+  isOpen,
+  onClose,
+}: AddPreventiveModalProps) => {
   const [machineId, setMachineId] = useState("");
   const [taskName, setTaskName] = useState("");
   const [frequencyDays, setFrequencyDays] = useState("");
@@ -40,38 +43,54 @@ export const AddPreventiveModal = ({ isOpen, onClose }: AddPreventiveModalProps)
           setNextDate("");
           setDescription("");
         },
-      }
+      },
     );
   };
+  console.log(machines);
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-lg shadow-xl w-full max-w-md overflow-hidden">
         <div className="flex justify-between items-center p-4 border-b border-gray-200 bg-gray-50">
-          <h2 className="text-lg font-bold text-gray-800">Programar Mantenimiento</h2>
-          <button onClick={onClose} className="text-gray-500 hover:text-gray-800 transition-colors">
+          <h2 className="text-lg font-bold text-gray-800">
+            Programar Mantenimiento
+          </h2>
+          <button
+            onClick={onClose}
+            className="text-gray-500 hover:text-gray-800 transition-colors"
+          >
             <X className="w-5 h-5" />
           </button>
         </div>
 
         <form onSubmit={handleSubmit} className="p-4 space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Máquina</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Máquina
+            </label>
             <select
               required
               value={machineId}
               onChange={(e) => setMachineId(e.target.value)}
               className="w-full border border-gray-300 rounded-md p-2 focus:ring-2 focus:ring-blue-500 outline-none"
             >
-              <option value="" disabled>Selecciona una máquina...</option>
+              <option value="" disabled>
+                Selecciona una máquina...
+              </option>
               {machines?.map((m: any) => (
-                <option key={m._id} value={m._id}>{m.name}</option>
+                <option key={m._id} value={m._id}>
+                  {/* Mostramos etiqueta (TAB-01) y nombre del catálogo */}
+                  {m.internalTag ? `[${m.internalTag}] ` : ""}
+                  {m.name || "Equipo sin nombre"}
+                </option>
               ))}
             </select>
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Nombre de la Tarea</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Nombre de la Tarea
+            </label>
             <input
               required
               type="text"
@@ -84,7 +103,9 @@ export const AddPreventiveModal = ({ isOpen, onClose }: AddPreventiveModalProps)
 
           <div className="flex gap-4">
             <div className="flex-1">
-              <label className="block text-sm font-medium text-gray-700 mb-1">Frecuencia (Días)</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Frecuencia (Días)
+              </label>
               <input
                 required
                 type="number"
@@ -96,7 +117,9 @@ export const AddPreventiveModal = ({ isOpen, onClose }: AddPreventiveModalProps)
               />
             </div>
             <div className="flex-1">
-              <label className="block text-sm font-medium text-gray-700 mb-1">Próxima Fecha</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Próxima Fecha
+              </label>
               <input
                 required
                 type="date"
@@ -108,7 +131,9 @@ export const AddPreventiveModal = ({ isOpen, onClose }: AddPreventiveModalProps)
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Descripción (Opcional)</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Descripción (Opcional)
+            </label>
             <textarea
               rows={3}
               placeholder="Detalles adicionales sobre la tarea..."

@@ -1,6 +1,7 @@
 import type { Request, Response, NextFunction } from "express";
 import Company from "../models/Company.js";
 
+// [!] Verifica que el usuario logueado sea el admin original (owner) de la compañia
 export const isCompanyOwner = async (
   req: Request,
   res: Response,

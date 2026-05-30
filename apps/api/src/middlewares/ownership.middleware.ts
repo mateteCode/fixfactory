@@ -2,7 +2,7 @@ import type { Request, Response, NextFunction } from "express";
 import type { Model } from "mongoose";
 
 /**
- * Valida si un recurso pertenece a la empresa del usuario.
+ * [!] Valida si un recurso pertenece a la empresa del usuario.
  * @param model El modelo de Mongoose (Machine, Issue, etc.)
  * @param fieldName El nombre del campo en el req que contiene el ID (ej: 'id' o 'machine')
  * @param source De dónde sacar el ID: 'params', 'body' o 'query'
@@ -18,11 +18,9 @@ export const validateOwnership = (
       const resourceId = req[source][fieldName];
 
       if (!resourceId) {
-        return res
-          .status(400)
-          .json({
-            message: `Falta el campo ${fieldName} para validar pertenencia.`,
-          });
+        return res.status(400).json({
+          message: `Falta el campo ${fieldName} para validar pertenencia.`,
+        });
       }
 
       // Buscamos el recurso filtrando por su ID y por la empresa del usuario
