@@ -16,6 +16,21 @@ export enum IssuePriority {
   CRITICA = "Crítica",
 }
 
+export interface Diagnostic {
+  _id?: string;
+  technician: Types.ObjectId;
+  description: string;
+  images?: string[];
+  createdAt: Date;
+}
+
+export interface Conclusion {
+  description: string;
+  images?: string[];
+  finishedBy: Types.ObjectId;
+  finishedAt: Date;
+}
+
 export interface IIssue extends Document {
   machine: Types.ObjectId;
   description: string; // Descripción del operario del problema
@@ -29,6 +44,8 @@ export interface IIssue extends Document {
   company: Types.ObjectId;
   assignedTo?: Types.ObjectId; // Técnico al que se le asignó la reparación
   repairImagesUrl?: string[]; // URL de las imagenes aportadas por el técnico
+  diagnostics: Diagnostic[];
+  conclusion?: Conclusion;
 }
 
 const issueSchema = new Schema<IIssue>(
@@ -58,6 +75,20 @@ const issueSchema = new Schema<IIssue>(
     },
     assignedTo: { type: Schema.Types.ObjectId, ref: "User" },
     repairImagesUrl: [{ type: String }],
+    diagnostics: [
+      {
+        technician: { type: Schema.Types.ObjectId, ref: "User" },
+        description: String,
+        images: [String],
+        createdAt: { type: Date, default: Date.now },
+      },
+    ],
+    conclusion: {
+      description: String,
+      images: [String],
+      finishedBy: { type: Schema.Types.ObjectId, ref: "User" },
+      finishedAt: Date,
+    },
   },
   {
     timestamps: true, // Para cumplir con la trazabilidad y auditoría (RF-14)

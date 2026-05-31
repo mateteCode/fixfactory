@@ -304,7 +304,7 @@ export const updateRequestStatus = async (req: Request, res: Response) => {
       // Si no queda ningún repuesto pendiente, avanzamos la incidencia
       if (pendingParts === 0) {
         await Issue.findByIdAndUpdate(request.issue, {
-          status: IssueStatus.EN_PROCESO,
+          status: IssueStatus.DIAGNOSTICADO,
         });
         console.log(
           `Incidencia ${request.issue} actualizada a DIAGNOSTICADO automáticamente.`,

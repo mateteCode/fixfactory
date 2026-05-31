@@ -175,6 +175,101 @@ const IncidentDetailModal = ({ incidentId, onClose }: Props) => {
                 )}
               </div>
 
+              {/* SECCIÓN NUEVA: BITÁCORA DE DIAGNÓSTICOS */}
+              {incident.diagnostics && incident.diagnostics.length > 0 && (
+                <div className="space-y-3 pt-4 border-t border-gray-100">
+                  <p className="text-xs font-bold text-gray-700 uppercase mb-1 flex items-center">
+                    <Wrench className="w-3 h-3 mr-1" /> Historial de
+                    Diagnósticos
+                  </p>
+                  {incident.diagnostics.map((diag: any, idx: number) => (
+                    <div
+                      key={idx}
+                      className="bg-indigo-50 border border-indigo-100 p-4 rounded-lg shadow-sm"
+                    >
+                      <div className="flex justify-between items-center mb-2">
+                        <span className="text-[10px] font-bold text-indigo-800 bg-indigo-100 px-2 py-0.5 rounded">
+                          Técnico: {diag.technician?.name || "Desconocido"}
+                        </span>
+                        <span className="text-[10px] text-indigo-400 font-mono">
+                          {new Date(diag.createdAt).toLocaleString()}
+                        </span>
+                      </div>
+                      <p className="text-sm text-indigo-900 whitespace-pre-wrap leading-relaxed">
+                        {diag.description}
+                      </p>
+
+                      {diag.images && diag.images.length > 0 && (
+                        <div className="flex gap-2 mt-3 overflow-x-auto pb-1">
+                          {diag.images.map((img: string, i: number) => (
+                            <a
+                              key={i}
+                              href={img}
+                              target="_blank"
+                              rel="noreferrer"
+                            >
+                              <img
+                                src={img}
+                                className="h-20 w-20 object-cover rounded border border-indigo-200 hover:opacity-80 transition-opacity"
+                                alt="Evidencia"
+                              />
+                            </a>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* SECCIÓN NUEVA: CONCLUSIÓN */}
+              {incident.conclusion && incident.conclusion.finishedBy && (
+                <div className="space-y-3 pt-4 border-t border-gray-100">
+                  <p className="text-xs font-bold text-gray-700 uppercase mb-1 flex items-center">
+                    <CheckCircle2 className="w-3 h-3 mr-1 text-green-600" />{" "}
+                    Resolución y Cierre
+                  </p>
+                  <div className="bg-green-50 border border-green-200 p-4 rounded-lg shadow-sm">
+                    <div className="flex justify-between items-center mb-2">
+                      <span className="text-[10px] font-bold text-green-800 bg-green-200 px-2 py-0.5 rounded">
+                        Finalizado por:{" "}
+                        {incident.conclusion.finishedBy?.name || "Desconocido"}
+                      </span>
+                      <span className="text-[10px] text-green-600 font-mono">
+                        {new Date(
+                          incident.conclusion.finishedAt,
+                        ).toLocaleString()}
+                      </span>
+                    </div>
+                    <p className="text-sm text-green-900 whitespace-pre-wrap leading-relaxed">
+                      {incident.conclusion.description}
+                    </p>
+
+                    {incident.conclusion.images &&
+                      incident.conclusion.images.length > 0 && (
+                        <div className="flex gap-2 mt-3 overflow-x-auto pb-1">
+                          {incident.conclusion.images.map(
+                            (img: string, i: number) => (
+                              <a
+                                key={i}
+                                href={img}
+                                target="_blank"
+                                rel="noreferrer"
+                              >
+                                <img
+                                  src={img}
+                                  className="h-24 w-24 object-cover rounded border border-green-300 hover:opacity-80 transition-opacity"
+                                  alt="Conclusión"
+                                />
+                              </a>
+                            ),
+                          )}
+                        </div>
+                      )}
+                  </div>
+                </div>
+              )}
+
               {/* SECCIÓN 3: Repuestos Solicitados */}
               <div>
                 <p className="text-xs font-bold text-gray-700 uppercase mb-3 flex items-center border-b pb-2">

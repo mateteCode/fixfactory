@@ -10,22 +10,45 @@ import {
   UserCheck,
   Play,
   Wrench,
+  X,
 } from "lucide-react";
 import { IssueStatus } from "../types/Issue";
 import RequestSparePartModal from "../components/incidents/RequestSparePartModal";
 import IncidentDetailModal from "../components/incidents/IncidentDetailModal";
 import AssignIssueModal from "../components/incidents/AssignIssueModal";
 import { useAuthStore } from "../store/useAuthStore";
+import TaskActionModal from "../components/incidents/TaskActionModal";
 
 const IncidentsPage = () => {
-  const { incidents, isLoading, updateStatus, assignTask, refetch } =
-    useIncidentManager();
+  const {
+    incidents,
+    isLoading,
+    updateStatus,
+    assignTask,
+    refetch,
+    addDiagnostic,
+    finishTask,
+    releaseTask,
+  } = useIncidentManager();
   const user = useAuthStore((state) => state.user);
 
   const [incidentForSparePart, setIncidentForSparePart] = useState<any>(null);
   const [detailModalId, setDetailModalId] = useState<string | null>(null);
   const [issueToAssign, setIssueToAssign] = useState<string | null>(null);
   const [filterMyTasks, setFilterMyTasks] = useState(false);
+  const [actionModal, setActionModal] = useState<{
+    issueId: string;
+    type: "diagnostic" | "finish";
+  } | null>(null);
+
+  const handleActionSubmit = async (description: string, images: string[]) => {
+    if (!actionModal) return;
+    if (actionModal.type === "diagnostic") {
+      await addDiagnostic(actionModal.issueId, description, images);
+    } else {
+      await finishTask(actionModal.issueId, description, images);
+    }
+  };
 
   // Privilegios
   const canAssignTasks =
@@ -148,46 +171,88 @@ const IncidentsPage = () => {
                   {/* FLUJO DE TRABAJO DEL TÉCNICO (Solo visible si es "Su" tarea) */}
                   {isMyTask && (
                     <>
-                      {inc.status === IssueStatus.EN_PROCESO && (
+                      {inc.status === "En Proceso" && (
                         <button
-                          onClick={() => updateStatus(inc._id, "Diagnóstico")}
+                          onClick={() =>
+                            setActionModal({
+                              issueId: inc._id,
+                              type: "diagnostic",
+                            })
+                          }
                           className="px-3 py-2 bg-indigo-600 text-white text-[10px] font-bold rounded hover:bg-indigo-700 uppercase flex items-center"
                         >
                           <Play className="w-3 h-3 mr-1" /> Diagnosticar
                         </button>
                       )}
 
-                      {[
-                        "Diagnóstico",
-                        "En Espera de Repuesto",
-                        "En Proceso",
-                      ].includes(inc.status) && (
-                        <button
-                          onClick={() => setIncidentForSparePart(inc)}
-                          className="px-3 py-2 bg-amber-500 text-white text-[10px] font-bold rounded hover:bg-amber-600 uppercase flex items-center"
-                        >
-                          <PackageSearch className="w-3 h-3 mr-1" /> Pedir
-                          Repuesto
-                        </button>
+                      {inc.status === "Diagnóstico" && (
+                        <>
+                          <button
+                            onClick={() => setIncidentForSparePart(inc)}
+                            className="px-3 py-2 bg-amber-500 text-white text-[10px] font-bold rounded hover:bg-amber-600 uppercase flex items-center shadow-sm"
+                          >
+                            <PackageSearch className="w-3 h-3 mr-1" /> Pedir
+                            Repuesto
+                          </button>
+                          <button
+                            onClick={() =>
+                              updateStatus(inc._id, "En Reparación")
+                            }
+                            className="px-3 py-2 bg-orange-600 text-white text-[10px] font-bold rounded hover:bg-orange-700 uppercase flex items-center shadow-sm"
+                          >
+                            <Wrench className="w-3 h-3 mr-1" /> Iniciar
+                            Reparación
+                          </button>
+                        </>
                       )}
 
-                      {(inc.status === "Diagnóstico" ||
-                        inc.status === "En Espera de Repuesto") && (
+                      {inc.status === "En Espera de Repuesto" && (
                         <button
                           onClick={() => updateStatus(inc._id, "En Reparación")}
-                          className="px-3 py-2 bg-orange-600 text-white text-[10px] font-bold rounded hover:bg-orange-700 uppercase flex items-center"
+                          className="px-3 py-2 bg-orange-600 text-white text-[10px] font-bold rounded hover:bg-orange-700 uppercase flex items-center shadow-sm"
                         >
-                          <Wrench className="w-3 h-3 mr-1" /> Reparar
+                          <Wrench className="w-3 h-3 mr-1" /> Retomar Reparación
                         </button>
                       )}
 
                       {inc.status === "En Reparación" && (
-                        <button
-                          onClick={() => updateStatus(inc._id, "Cerrado")}
-                          className="px-3 py-2 bg-green-600 text-white text-[10px] font-bold rounded hover:bg-green-700 uppercase flex items-center"
-                        >
-                          <CheckCircle2 className="w-3 h-3 mr-1" /> Finalizar
-                        </button>
+                        <>
+                          <button
+                            onClick={() =>
+                              setActionModal({
+                                issueId: inc._id,
+                                type: "diagnostic",
+                              })
+                            }
+                            className="px-3 py-2 bg-indigo-500 text-white text-[10px] font-bold rounded hover:bg-indigo-600 uppercase flex items-center"
+                          >
+                            <Play className="w-3 h-3 mr-1" /> + Info
+                          </button>
+                          <button
+                            onClick={() =>
+                              setActionModal({
+                                issueId: inc._id,
+                                type: "finish",
+                              })
+                            }
+                            className="px-3 py-2 bg-green-600 text-white text-[10px] font-bold rounded hover:bg-green-700 uppercase flex items-center"
+                          >
+                            <CheckCircle2 className="w-3 h-3 mr-1" /> Finalizar
+                          </button>
+                          <button
+                            onClick={() => {
+                              if (
+                                window.confirm(
+                                  "¿Seguro que deseas abandonar la tarea? Volverá a la cola de pendientes.",
+                                )
+                              )
+                                releaseTask(inc._id);
+                            }}
+                            className="px-3 py-2 bg-red-600 text-white text-[10px] font-bold rounded hover:bg-red-700 uppercase flex items-center"
+                          >
+                            <X className="w-3 h-3 mr-1" /> Abandonar
+                          </button>
+                        </>
                       )}
                     </>
                   )}
@@ -225,6 +290,27 @@ const IncidentsPage = () => {
       <IncidentDetailModal
         incidentId={detailModalId}
         onClose={() => setDetailModalId(null)}
+      />
+
+      <TaskActionModal
+        isOpen={!!actionModal}
+        onClose={() => setActionModal(null)}
+        title={
+          actionModal?.type === "diagnostic"
+            ? "Reporte de Diagnóstico"
+            : "Conclusión de Tarea"
+        }
+        placeholder={
+          actionModal?.type === "diagnostic"
+            ? "Detalla el problema encontrado..."
+            : "Conclusión y trabajo realizado..."
+        }
+        submitText={
+          actionModal?.type === "diagnostic"
+            ? "Guardar Diagnóstico"
+            : "Cerrar Tarea"
+        }
+        onSubmit={handleActionSubmit}
       />
     </div>
   );

@@ -39,6 +39,29 @@ export const useIncidentManager = () => {
     fetchIncidents();
   };
 
+  const addDiagnostic = async (
+    issueId: string,
+    description: string,
+    images: string[],
+  ) => {
+    await api.patch(`/issues/${issueId}/diagnostic`, { description, images });
+    fetchIncidents();
+  };
+
+  const finishTask = async (
+    issueId: string,
+    description: string,
+    images: string[],
+  ) => {
+    await api.patch(`/issues/${issueId}/finish`, { description, images });
+    fetchIncidents();
+  };
+
+  const releaseTask = async (issueId: string) => {
+    await api.patch(`/issues/${issueId}/release`);
+    fetchIncidents();
+  };
+
   useEffect(() => {
     fetchIncidents();
   }, []);
@@ -49,5 +72,8 @@ export const useIncidentManager = () => {
     updateStatus,
     assignTask,
     refetch: fetchIncidents,
+    addDiagnostic,
+    finishTask,
+    releaseTask,
   };
 };

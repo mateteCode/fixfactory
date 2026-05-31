@@ -6,6 +6,9 @@ import {
   updateIssue,
   closeIssue,
   assignIssue,
+  addDiagnostic,
+  finishIssue,
+  releaseIssue,
 } from "../controllers/issue.controller.js";
 import { authenticate } from "../middlewares/auth.middleware.js";
 import { authorize } from "../middlewares/role.middleware.js";
@@ -50,6 +53,25 @@ router.patch(
   authorize([UserRole.TECNICO, UserRole.MANTENIMIENTO, UserRole.ADMIN]),
   validateOwnership(Issue, "id", "params"),
   closeIssue,
+);
+
+router.patch(
+  "/:id/diagnostic",
+  authenticate,
+  authorize(["ADMIN", "MANTENIMIENTO", "TECNICO"]),
+  addDiagnostic,
+);
+router.patch(
+  "/:id/finish",
+  authenticate,
+  authorize(["ADMIN", "MANTENIMIENTO", "TECNICO"]),
+  finishIssue,
+);
+router.patch(
+  "/:id/release",
+  authenticate,
+  authorize(["ADMIN", "MANTENIMIENTO", "TECNICO"]),
+  releaseIssue,
 );
 
 export default router;

@@ -79,6 +79,7 @@ export const getIssues = async (req: Request, res: Response): Promise<void> => {
       })
       .populate("reportedBy", "name email")
       .populate("assignedTo", "name email")
+      .populate("diagnostics.technician", "name")
       .sort({ createdAt: -1 });
 
     res.status(200).json(issues);
@@ -103,7 +104,9 @@ export const getIssueById = async (
         populate: { path: "catalogRef" },
       })
       .populate("reportedBy", "name email")
-      .populate("assignedTo", "name email");
+      .populate("assignedTo", "name email")
+      .populate("diagnostics.technician", "name")
+      .populate("conclusion.finishedBy", "name");
 
     if (!issue) {
       res
@@ -227,5 +230,69 @@ export const assignIssue = async (
     res.status(200).json(updatedIssue);
   } catch (error) {
     res.status(500).json({ message: "Error al asignar la tarea." });
+  }
+};
+
+// Agregar Diagnóstico
+export const addDiagnostic = async (req: Request, res: Response) => {
+  try {
+    const { description, images } = req.body;
+    const tech = (req as any).user;
+
+    const issue = await Issue.findByIdAndUpdate(
+      req.params.id,
+      {
+        $push: { diagnostics: { technician: tech.id, description, images } },
+        status: "Diagnóstico",
+      },
+      { new: true },
+    );
+    res.json(issue);
+  } catch (error) {
+    res.status(500).json({ message: "Error al agregar diagnóstico" });
+  }
+};
+
+// Finalizar Tarea
+export const finishIssue = async (req: Request, res: Response) => {
+  try {
+    const { description, images } = req.body;
+    const tech = (req as any).user;
+
+    const issue = await Issue.findByIdAndUpdate(
+      req.params.id,
+      {
+        conclusion: {
+          description,
+          images,
+          finishedBy: tech.id,
+          finishedAt: new Date(),
+        },
+        status: "Cerrado",
+        closedAt: new Date(), // Importante para la métrica MTTR del Dashboard
+      },
+      { new: true },
+    );
+
+    // ¡Clave! Reactivar la máquina a Operativa
+    if (issue) await syncMachineStatus(issue.machine, (req as any).companyId);
+
+    res.json(issue);
+  } catch (error) {
+    res.status(500).json({ message: "Error al finalizar" });
+  }
+};
+
+// Liberar Tarea (Abandonar)
+export const releaseIssue = async (req: Request, res: Response) => {
+  try {
+    const issue = await Issue.findByIdAndUpdate(
+      req.params.id,
+      { assignedTo: null, status: "Pendiente" },
+      { new: true },
+    );
+    res.json(issue);
+  } catch (error) {
+    res.status(500).json({ message: "Error al liberar" });
   }
 };
