@@ -4,6 +4,7 @@ import Machine from "../models/Machine.js";
 import Issue from "../models/Issue.js";
 import { IssueStatus } from "../models/Issue.js";
 import { UserRole } from "../models/User.js";
+import { NotificationService } from "../services/notification.service.js";
 
 // [✔] Helper local para verificar y restablecer la máquina si corresponde
 const syncMachineStatus = async (machineId: any, companyId: any) => {
@@ -60,6 +61,18 @@ export const createIssue = async (
       reportedBy: savedIssue.reportedBy,
       description: savedIssue.description,
     });
+
+    await NotificationService.sendToRole(
+      ["ADMIN", "MANTENIMIENTO"],
+      companyId,
+      {
+        title: "Nueva Falla Reportada",
+        message: `Se ha reportado una falla en la máquina.`,
+        type: "ISSUE",
+        link: "/ordenes",
+      },
+      ["IN_APP", "EMAIL"],
+    );
 
     res.status(201).json(savedIssue);
   } catch (error) {
@@ -227,6 +240,19 @@ export const assignIssue = async (
       return;
     }
 
+    await NotificationService.sendToUser(
+      technicianId,
+      (req as any).companyId,
+      {
+        title: "Nueva Tarea Asignada",
+        message:
+          "Se te ha asignado una orden de trabajo. Diagnostica a la brevedad.",
+        type: "ISSUE",
+        link: "/ordenes", // Cuando el técnico entre, verá "Mis Tareas"
+      },
+      ["IN_APP", "EMAIL"],
+    );
+
     res.status(200).json(updatedIssue);
   } catch (error) {
     res.status(500).json({ message: "Error al asignar la tarea." });
@@ -276,6 +302,19 @@ export const finishIssue = async (req: Request, res: Response) => {
 
     // ¡Clave! Reactivar la máquina a Operativa
     if (issue) await syncMachineStatus(issue.machine, (req as any).companyId);
+
+    if (issue && issue.reportedBy) {
+      await NotificationService.sendToUser(
+        issue.reportedBy.toString(),
+        (req as any).companyId,
+        {
+          title: "Máquina Reparada",
+          message: `La orden de reparación ha sido finalizada y la máquina está operativa. Ya podés reanudar el uso.`,
+          type: "ISSUE",
+          link: "/ordenes",
+        },
+      );
+    }
 
     res.json(issue);
   } catch (error) {

@@ -12,6 +12,7 @@ import { useAuthStore } from "../../store/useAuthStore";
 import { useNavigate } from "react-router-dom";
 import ChangePasswordModal from "../auth/ChangePasswordModal";
 import QRScannerModal from "../common/QRScannerModal";
+import { NotificationBell } from "./NotificationBell";
 
 const Header = () => {
   const { user, logout } = useAuthStore();
@@ -58,6 +59,8 @@ const Header = () => {
           <QrCode className="w-4 h-4" />
           <span>ESCANEAR QR</span>
         </button>
+
+        <NotificationBell />
 
         {/* Perfil de Usuario y Dropdown */}
         <div className="relative" ref={menuRef}>

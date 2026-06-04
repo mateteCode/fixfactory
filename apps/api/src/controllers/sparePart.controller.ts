@@ -6,6 +6,7 @@ import SparePartRequest, {
 import Issue, { IssueStatus } from "../models/Issue.js";
 import type { AnyArray } from "mongoose";
 import { SparePartService } from "../services/sparePart.service.js";
+import { NotificationService } from "../services/notification.service.js";
 
 // Asignarle el estado "EN_STOCK" a los pedidos de repuestos más antiguos al reponer el stock
 const allocateVirtualStock = async (
@@ -107,6 +108,13 @@ export const createSparePart = async (
     res.status(201).json({
       message: "Repuesto registrado exitosamente",
       sparePart: newPart,
+    });
+
+    await NotificationService.sendToRole(["ADMIN", "COMPRAS"], companyId, {
+      title: "Solicitud de Repuesto",
+      message: `Un técnico ha solicitado repuestos para una orden.`,
+      type: "SPARE_PART",
+      link: "/compras",
     });
   } catch (error: any) {
     res
