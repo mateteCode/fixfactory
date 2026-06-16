@@ -6,15 +6,17 @@ import { useSparePartRequests } from "../../hooks/useSparePartRequests";
 interface Props {
   isOpen: boolean;
   onClose: () => void;
-  incidentId: string;
-  machineId: string; // Para filtrar compatibilidad
+  orderId: string; // <-- Usamos un ID genérico
+  orderType: "ISSUE" | "PREVENTIVE"; // <-- Para saber a dónde apuntar
+  machineId: string;
   onSuccess: () => void;
 }
 
 const RequestSparePartModal = ({
   isOpen,
   onClose,
-  incidentId,
+  orderId,
+  orderType,
   machineId,
   onSuccess,
 }: Props) => {
@@ -37,14 +39,17 @@ const RequestSparePartModal = ({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!selectedPart) return alert("Seleccioná un repuesto");
+    if (!selectedPart || !quantity)
+      return alert("Seleccioná un repuesto y cantidad");
 
     try {
       await createRequest({
-        issue: incidentId,
+        issue: orderType === "ISSUE" ? orderId : undefined,
+        preventive: orderType === "PREVENTIVE" ? orderId : undefined,
+        machine: machineId,
         sparePart: selectedPart,
-        quantity,
-      });
+        quantity: Number(quantity),
+      } as any);
       onSuccess();
       onClose();
     } catch (error) {

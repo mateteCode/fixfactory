@@ -1,145 +1,250 @@
 import { useState } from "react";
-import { Plus, Calendar, AlertCircle, CheckCircle2 } from "lucide-react";
-// Importamos el hook y la interfaz (tipo) desde la carpeta correcta
+import { usePreventiveManager } from "../hooks/usePreventiveManager";
+import { useAuthStore } from "../store/useAuthStore";
 import {
-  usePreventive,
-  type PreventiveMaintenance,
-} from "../hooks/usePreventive";
-import { DataTable } from "../components/common/DataTable";
+  Calendar,
+  UserCheck,
+  Play,
+  Wrench,
+  X,
+  CheckCircle2,
+  ShieldCheck,
+  PackageSearch,
+  Plus,
+} from "lucide-react";
 import { AddPreventiveModal } from "../components/preventive/AddPreventiveModal";
+import TaskActionModal from "../components/incidents/TaskActionModal";
+import RequestSparePartModal from "../components/incidents/RequestSparePartModal";
+import { AssignPreventiveModal } from "../components/preventive/AssignPreventiveModal";
 
 const PreventivePage = () => {
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  // Llamamos al hook para traer los datos
-  const { data, isLoading, error } = usePreventive();
-  console.log(data);
+  const {
+    tasks,
+    isLoading,
+    assignTask,
+    updateStatus,
+    finishTask,
+    releaseTask,
+    refetch,
+  } = usePreventiveManager();
+  const user = useAuthStore((state) => state.user);
 
-  // 2. Manejo de estado mientras carga
-  if (isLoading) {
-    return (
-      <div className="p-6 flex justify-center items-center h-full">
-        <p className="text-gray-600 font-semibold animate-pulse">
-          Cargando mantenimientos programados...
-        </p>
-      </div>
-    );
-  }
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [filterMyTasks, setFilterMyTasks] = useState(false);
+  const [taskToAssign, setTaskToAssign] = useState<string | null>(null);
+  const [taskForSparePart, setTaskForSparePart] = useState<any>(null);
+  const [actionModal, setActionModal] = useState<{ id: string } | null>(null);
 
-  // 3. Manejo de errores
-  if (error) {
-    return (
-      <div className="p-6">
-        <p className="text-red-500 font-semibold bg-red-50 p-4 rounded">
-          Hubo un error al cargar los datos del servidor.
-        </p>
-      </div>
-    );
-  }
+  const canAssignTasks =
+    user?.role === "ADMIN" || user?.role === "MANTENIMIENTO";
+  const displayedTasks = filterMyTasks
+    ? tasks.filter((t) => t.assignedTo?._id === user?.id)
+    : tasks;
 
-  // 4. Definimos las columnas adaptadas a tu componente DataTable.tsx
-  const columns = [
-    {
-      header: "Máquina",
-      accessor: (row: PreventiveMaintenance) => {
-        const machine = row.machine;
-        const catalog = machine?.catalogRef;
-
-        if (!machine)
-          return <span className="text-gray-400 italic">Desconocida</span>;
-
-        return (
-          <div className="flex flex-col gap-0.5">
-            {/* Fila 1: Identificación Física */}
-            <div className="flex items-baseline gap-2">
-              <span className="font-extrabold text-gray-900 text-sm tracking-tight">
-                {machine.internalTag || "S/ETIQUETA"}
-              </span>
-              <span className="font-bold text-gray-600 text-xs">
-                {catalog?.name || "Equipo sin nombre"}
-              </span>
-            </div>
-
-            {/* Fila 2: Datos Técnicos */}
-            <div className="flex items-center gap-2 text-[10px] text-gray-400 font-medium uppercase tracking-wider">
-              <span className="bg-gray-100 px-1.5 py-0.5 rounded text-gray-500">
-                {catalog?.brand || "MARCA N/A"}
-              </span>
-              <span>•</span>
-              <span>{catalog?.modelCode || "MOD. N/A"}</span>
-            </div>
-          </div>
-        );
-      },
-    },
-    {
-      header: "Tipo de Tarea",
-      // Pasamos el string directo para claves simples
-      accessor: "taskName" as keyof PreventiveMaintenance,
-    },
-    {
-      header: "Frecuencia (Días)",
-      accessor: "frequencyDays" as keyof PreventiveMaintenance,
-    },
-    {
-      header: "Próxima Fecha",
-      // Función para formatear la fecha a un string legible
-      accessor: (row: PreventiveMaintenance) =>
-        new Date(row.nextDate).toLocaleDateString(),
-    },
-    {
-      header: "Estado",
-      // Renderizado personalizado pasado a través del accessor
-      accessor: (row: PreventiveMaintenance) => {
-        const status = row.status;
-        const colors = {
-          Programado: "bg-blue-100 text-blue-800",
-          Vencido: "bg-red-100 text-red-800",
-          Realizado: "bg-green-100 text-green-800",
-        };
-        const colorClass =
-          colors[status as keyof typeof colors] || "bg-gray-100 text-gray-800";
-
-        return (
-          <span
-            className={`px-2 py-1 rounded-full text-xs font-bold uppercase tracking-wider ${colorClass}`}
-          >
-            {status}
-          </span>
-        );
-      },
-    },
-  ];
+  const handleFinishSubmit = async (description: string, images: string[]) => {
+    if (actionModal) await finishTask(actionModal.id, description, images);
+  };
 
   return (
-    <div className="p-6">
-      {/* Cabecera de la página */}
-      <div className="flex justify-between items-center mb-6">
+    <div className="space-y-6">
+      <div className="flex justify-between items-center flex-wrap gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-800">
-            Mantenimiento Preventivo
+          <h1 className="text-2xl font-bold text-gray-800 flex items-center">
+            <Calendar className="mr-2 w-6 h-6 text-indigo-600" /> Plan
+            Preventivo
           </h1>
-          <p className="text-gray-500 text-sm mt-1">
-            Gestiona las tareas programadas para los equipos.
+          <p className="text-sm text-gray-500">
+            Mantenimiento programado para activos.
           </p>
         </div>
 
-        <button
-          onClick={() => setIsModalOpen(true)}
-          className="bg-[#7A7A7A] hover:bg-gray-800 text-white px-4 py-2 rounded-md flex items-center transition-colors shadow-sm font-semibold text-sm"
-        >
-          <Plus className="w-4 h-4 mr-2" />
-          Programar Tarea
-        </button>
+        <div className="flex gap-3">
+          <div className="flex bg-gray-200 p-1 rounded-lg">
+            <button
+              onClick={() => setFilterMyTasks(false)}
+              className={`px-4 py-1.5 text-xs font-bold rounded ${!filterMyTasks ? "bg-white shadow-sm text-gray-800" : "text-gray-500"}`}
+            >
+              Todos
+            </button>
+            <button
+              onClick={() => setFilterMyTasks(true)}
+              className={`px-4 py-1.5 text-xs font-bold rounded ${filterMyTasks ? "bg-white shadow-sm text-indigo-700" : "text-gray-500"}`}
+            >
+              Mis Mantenimientos
+            </button>
+          </div>
+          {canAssignTasks && (
+            <button
+              onClick={() => setIsAddModalOpen(true)}
+              className="bg-indigo-600 text-white px-4 py-2 rounded-md flex items-center shadow-sm font-bold text-xs uppercase hover:bg-indigo-700"
+            >
+              <Plus size={16} className="mr-1" /> Programar
+            </button>
+          )}
+        </div>
       </div>
 
-      {/* Contenedor de la Tabla */}
-      <div className="bg-white p-1 rounded-lg shadow-sm border border-gray-200">
-        <DataTable data={data || []} columns={columns} />
+      <div className="grid grid-cols-1 gap-4">
+        {isLoading ? (
+          <div className="p-20 text-center animate-pulse text-gray-500 font-bold">
+            Cargando preventivos...
+          </div>
+        ) : displayedTasks.length === 0 ? (
+          <div className="bg-white p-10 text-center rounded-lg border border-dashed border-gray-300 text-gray-400">
+            No hay mantenimientos programados.
+          </div>
+        ) : (
+          displayedTasks.map((task) => {
+            const isMyTask = task.assignedTo?._id === user?.id;
+
+            return (
+              <div
+                key={task._id}
+                className="bg-white rounded-lg border-l-4 border-indigo-500 shadow-sm p-5 flex flex-col md:flex-row md:items-center justify-between gap-4"
+              >
+                <div className="flex items-start space-x-4">
+                  <div className="p-3 bg-indigo-50 text-indigo-600 rounded-full shrink-0">
+                    <ShieldCheck size={20} />
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="bg-indigo-100 text-indigo-800 text-[10px] px-2 py-0.5 rounded font-black tracking-widest uppercase">
+                        MANTENIMIENTO
+                      </span>
+                      <h3 className="font-bold text-gray-800">
+                        {task.machine?.internalTag || "S/T"} -{" "}
+                        {task.machine?.catalogRef?.name}
+                      </h3>
+                    </div>
+                    <p className="text-sm font-bold text-gray-600 mt-1">
+                      {task.taskName}
+                    </p>
+                    <div className="flex flex-wrap items-center mt-2 text-[10px] text-gray-500 gap-3">
+                      <span className="font-bold text-red-600 bg-red-50 px-2 py-0.5 rounded border border-red-100">
+                        VENCE: {new Date(task.nextDate).toLocaleDateString()}
+                      </span>
+                      <span className="font-bold uppercase tracking-widest text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded border border-indigo-100">
+                        {task.status}
+                      </span>
+                      {task.assignedTo ? (
+                        <span className="flex items-center font-bold text-emerald-600">
+                          <UserCheck size={10} className="mr-1" />{" "}
+                          {task.assignedTo.name}
+                        </span>
+                      ) : (
+                        <span className="text-amber-600 font-bold flex items-center">
+                          Sin asignar
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex flex-wrap gap-2 justify-end">
+                  {task.status === "Programado" && canAssignTasks && (
+                    <button
+                      onClick={() => setTaskToAssign(task._id)}
+                      className="px-3 py-2 bg-blue-600 text-white text-[10px] font-bold rounded hover:bg-blue-700 uppercase flex items-center shadow-sm"
+                    >
+                      <UserCheck className="w-3 h-3 mr-1" /> Asignar
+                    </button>
+                  )}
+
+                  {isMyTask && (
+                    <>
+                      {task.status === "Asignado" && (
+                        <button
+                          onClick={() => updateStatus(task._id, "En Proceso")}
+                          className="px-3 py-2 bg-orange-600 text-white text-[10px] font-bold rounded hover:bg-orange-700 uppercase flex items-center shadow-sm"
+                        >
+                          <Wrench className="w-3 h-3 mr-1" /> Iniciar
+                          Mantenimiento
+                        </button>
+                      )}
+
+                      {task.status === "En Proceso" && (
+                        <>
+                          <button
+                            onClick={() => setTaskForSparePart(task)}
+                            className="px-3 py-2 bg-amber-500 text-white text-[10px] font-bold rounded hover:bg-amber-600 uppercase flex items-center shadow-sm"
+                          >
+                            <PackageSearch className="w-3 h-3 mr-1" /> Repuestos
+                          </button>
+                          <button
+                            onClick={() => setActionModal({ id: task._id })}
+                            className="px-3 py-2 bg-green-600 text-white text-[10px] font-bold rounded hover:bg-green-700 uppercase flex items-center"
+                          >
+                            <CheckCircle2 className="w-3 h-3 mr-1" /> Finalizar
+                          </button>
+                          <button
+                            onClick={() => releaseTask(task._id)}
+                            className="px-3 py-2 bg-red-600 text-white text-[10px] font-bold rounded hover:bg-red-700 uppercase flex items-center"
+                          >
+                            <X className="w-3 h-3 mr-1" /> Abandonar
+                          </button>
+                        </>
+                      )}
+
+                      {task.status === "En Espera de Repuesto" && (
+                        <>
+                          <button
+                            onClick={() => setTaskForSparePart(task)}
+                            className="px-3 py-2 bg-amber-500 text-white text-[10px] font-bold rounded hover:bg-amber-600 uppercase flex items-center shadow-sm"
+                          >
+                            <PackageSearch className="w-3 h-3 mr-1" /> +
+                            Repuestos
+                          </button>
+                          <button
+                            onClick={() => updateStatus(task._id, "En Proceso")}
+                            className="px-3 py-2 bg-orange-600 text-white text-[10px] font-bold rounded hover:bg-orange-700 uppercase flex items-center shadow-sm"
+                          >
+                            <Wrench className="w-3 h-3 mr-1" /> Retomar
+                            Preventivo
+                          </button>
+                        </>
+                      )}
+                    </>
+                  )}
+                  {task.status === "Realizado" && (
+                    <CheckCircle2 className="text-green-500 w-6 h-6 ml-2" />
+                  )}
+                </div>
+              </div>
+            );
+          })
+        )}
       </div>
 
       <AddPreventiveModal
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
+        isOpen={isAddModalOpen}
+        onClose={() => {
+          setIsAddModalOpen(false);
+          refetch();
+        }}
+      />
+      <AssignPreventiveModal
+        isOpen={!!taskToAssign}
+        onClose={() => setTaskToAssign(null)}
+        taskId={taskToAssign}
+        onAssign={assignTask}
+      />
+      {taskForSparePart && (
+        <RequestSparePartModal
+          isOpen={true}
+          onClose={() => setTaskForSparePart(null)}
+          orderId={taskForSparePart._id}
+          orderType="PREVENTIVE"
+          machineId={taskForSparePart.machine._id}
+          onSuccess={refetch}
+        />
+      )}
+      <TaskActionModal
+        isOpen={!!actionModal}
+        onClose={() => setActionModal(null)}
+        title="Finalizar Mantenimiento Preventivo"
+        placeholder="Trabajo realizado y observaciones..."
+        submitText="Cerrar Mantenimiento"
+        onSubmit={handleFinishSubmit}
       />
     </div>
   );

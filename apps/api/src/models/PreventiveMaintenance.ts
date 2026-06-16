@@ -8,6 +8,13 @@ export enum PreventiveStatus {
   REALIZADO = "Realizado",
 }
 
+export interface Conclusion {
+  description: string;
+  images?: string[];
+  finishedBy: Types.ObjectId;
+  finishedAt: Date;
+}
+
 export interface IPreventiveMaintenance extends Document {
   machine: Types.ObjectId;
   taskName: string; // Ej: "Cambio de aceite"
@@ -18,6 +25,7 @@ export interface IPreventiveMaintenance extends Document {
   status: PreventiveStatus;
   company: Types.ObjectId;
   assignedTo?: Types.ObjectId; // Tecnico asignado
+  conclusion?: Conclusion;
 }
 
 const preventiveSchema = new Schema<IPreventiveMaintenance>(
@@ -40,6 +48,12 @@ const preventiveSchema = new Schema<IPreventiveMaintenance>(
       index: true,
     },
     assignedTo: { type: Schema.Types.ObjectId, ref: "User" },
+    conclusion: {
+      description: String,
+      images: [String],
+      finishedBy: { type: Schema.Types.ObjectId, ref: "User" },
+      finishedAt: Date,
+    },
   },
   {
     timestamps: true,

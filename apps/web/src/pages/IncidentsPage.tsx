@@ -292,7 +292,8 @@ const IncidentsPage = () => {
         <RequestSparePartModal
           isOpen={true}
           onClose={() => setIncidentForSparePart(null)}
-          incidentId={incidentForSparePart._id}
+          orderId={incidentForSparePart._id}
+          orderType="ISSUE"
           machineId={
             incidentForSparePart.machine._id || incidentForSparePart.machine
           }

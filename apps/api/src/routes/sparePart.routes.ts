@@ -10,7 +10,6 @@ import {
   createSparePartRequest,
   getSparePartRequests,
   updateRequestStatus,
-  updateSparePartPrice,
   /*updatePurchaseDetails,*/
 } from "../controllers/sparePart.controller.js";
 import { checkTenant } from "../middlewares/tenant.middleware.js";

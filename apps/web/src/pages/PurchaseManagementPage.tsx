@@ -8,6 +8,8 @@ import {
   CheckCircle,
   PackageCheck,
   Ban,
+  Check,
+  X,
 } from "lucide-react";
 
 const PurchaseManagementPage = () => {
@@ -43,7 +45,7 @@ const PurchaseManagementPage = () => {
       header: "Máquina Afectada",
       accessor: (req: any) => {
         // Accedemos a la instancia de la máquina y luego a su catálogo
-        const machine = req.issue?.machine;
+        const machine = req.issue?.machine || req.preventive?.machine;
         const catalog = machine?.catalogRef;
         if (!machine)
           return (
@@ -132,6 +134,16 @@ const PurchaseManagementPage = () => {
               title="Rechazar Pedido"
             >
               <Ban size={16} />
+            </button>
+          )}
+          {/* SI ESTÁ COMPRADO: Botón para indicar que ya llegó físicamente (En Stock) */}
+          {req.status === "Comprado" && (
+            <button
+              onClick={() => updateRequestStatus(req._id, "En Stock")}
+              className="p-1.5 bg-indigo-100 text-indigo-700 rounded hover:bg-indigo-200 shadow-sm transition-colors"
+              title="Marcar como Recibido (En Stock)"
+            >
+              <PackageCheck size={16} />
             </button>
           )}
         </div>

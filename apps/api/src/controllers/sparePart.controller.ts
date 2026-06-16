@@ -8,6 +8,7 @@ import type { AnyArray } from "mongoose";
 import { SparePartService } from "../services/sparePart.service.js";
 import { NotificationService } from "../services/notification.service.js";
 import SparePartProfile from "../models/SparePartProfile.js";
+import PreventiveMaintenance from "../models/PreventiveMaintenance.js";
 
 // Asignarle el estado "EN_STOCK" a los pedidos de repuestos más antiguos al reponer el stock
 const allocateVirtualStock = async (
@@ -192,30 +193,48 @@ export const adjustStock = async (req: Request, res: Response) => {
   }
 };
 
-// [✔] Crear un pedido de repuesto
+// [ ] Crear un pedido de repuesto
 export const createSparePartRequest = async (req: Request, res: Response) => {
   try {
     const companyId = (req as any).companyId;
     const userId = (req as any).user.id;
-    const { issue: issueId, sparePart: partId, quantity } = req.body;
+    // Capturamos preventiveId si es que viene
+    const {
+      issue: issueId,
+      preventive: preventiveId,
+      machine: machineId,
+      sparePart: partId,
+      quantity,
+    } = req.body;
 
-    // Validar que la incidencia pertenezca a la empresa
-    const issue = await Issue.findOne({ _id: issueId, company: companyId });
-    if (!issue) {
-      res
-        .status(403)
-        .json({ message: "La incidencia no pertenece a tu empresa." });
-      return;
+    // 1. Validar que la orden pertenezca a la empresa, sea incidencia o preventivo
+    if (issueId) {
+      const issue = await Issue.findOne({ _id: issueId, company: companyId });
+      if (!issue)
+        return res
+          .status(403)
+          .json({ message: "La incidencia no pertenece a tu empresa." });
+    } else if (preventiveId) {
+      const prev = await PreventiveMaintenance.findOne({
+        _id: preventiveId,
+        company: companyId,
+      });
+      if (!prev)
+        return res
+          .status(403)
+          .json({ message: "El preventivo no pertenece a tu empresa." });
+    } else {
+      return res
+        .status(400)
+        .json({ message: "Debe proveer una incidencia o un preventivo." });
     }
 
-    // Validar que el repuesto pertenezca a la empresa
+    // 2. Validar el repuesto
     const part = await SparePart.findOne({ _id: partId, company: companyId });
-    if (!part) {
-      res
+    if (!part)
+      return res
         .status(403)
         .json({ message: "El repuesto no pertenece a tu empresa." });
-      return;
-    }
 
     const status =
       part.stockQuantity >= quantity
@@ -224,6 +243,7 @@ export const createSparePartRequest = async (req: Request, res: Response) => {
 
     const newRequest = new SparePartRequest({
       ...req.body,
+      machine: machineId,
       requestedBy: userId,
       company: companyId,
       status,
@@ -232,10 +252,16 @@ export const createSparePartRequest = async (req: Request, res: Response) => {
 
     await newRequest.save();
 
-    // Actualizar la incidencia a "En espera de repuesto"
-    await Issue.findByIdAndUpdate(issueId, {
-      status: IssueStatus.EN_ESPERA_DE_REPUESTO,
-    });
+    // 3. Actualizar el estado de la tarea origen
+    if (issueId) {
+      await Issue.findByIdAndUpdate(issueId, {
+        status: IssueStatus.EN_ESPERA_DE_REPUESTO,
+      });
+    } else if (preventiveId) {
+      await PreventiveMaintenance.findByIdAndUpdate(preventiveId, {
+        status: "En Espera de Repuesto",
+      });
+    }
 
     res.status(201).json(newRequest);
   } catch (error) {
@@ -348,6 +374,13 @@ export const getSparePartRequests = async (req: Request, res: Response) => {
       .populate("requestedBy", "name email")
       .populate({
         path: "issue",
+        populate: {
+          path: "machine",
+          populate: { path: "catalogRef" },
+        },
+      })
+      .populate({
+        path: "preventive",
         populate: {
           path: "machine",
           populate: { path: "catalogRef" },

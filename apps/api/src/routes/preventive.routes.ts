@@ -1,7 +1,11 @@
 import { Router } from "express";
 import {
+  assignPreventive,
   createPreventiveTask,
+  finishPreventive,
   getPreventiveTasks,
+  releasePreventive,
+  updatePreventiveStatus,
 } from "../controllers/preventive.controller.js";
 import { runMaintenanceCheck } from "../services/cron.service.js";
 import Machine from "../models/Machine.js";
@@ -32,5 +36,25 @@ router.post("/test-cron", async (req, res) => {
     res.status(500).json({ message: "Error al ejecutar el test", error });
   }
 });
+router.patch(
+  "/assign",
+  authorize(["ADMIN", "MANTENIMIENTO"]),
+  assignPreventive,
+);
+router.patch(
+  "/:id/status",
+  authorize(["ADMIN", "MANTENIMIENTO", "TECNICO"]),
+  updatePreventiveStatus,
+);
+router.patch(
+  "/:id/finish",
+  authorize(["ADMIN", "MANTENIMIENTO", "TECNICO"]),
+  finishPreventive,
+);
+router.patch(
+  "/:id/release",
+  authorize(["ADMIN", "MANTENIMIENTO", "TECNICO"]),
+  releasePreventive,
+);
 
 export default router;
