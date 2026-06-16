@@ -62,6 +62,18 @@ export const useSpareParts = () => {
     fetchSpareParts();
   };
 
+  /*
+  const updatePrice = async (id: string, price: number) => {
+    try {
+      await api.patch(`/spare-parts/catalog/${id}/price`, { price });
+      fetchSpareParts();
+    } catch (error) {
+      console.error("Error al actualizar precio", error);
+      throw error;
+    }
+  };
+  */
+
   useEffect(() => {
     fetchSpareParts();
   }, [fetchSpareParts]);

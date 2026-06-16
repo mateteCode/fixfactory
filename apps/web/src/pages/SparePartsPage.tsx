@@ -1,21 +1,34 @@
 import { useState } from "react";
 import { useSpareParts, type SparePart } from "../hooks/useSpareParts";
 import { DataTable } from "../components/common/DataTable";
-import { Package, Plus, AlertCircle, Eye, Layers } from "lucide-react";
+import {
+  Package,
+  Plus,
+  AlertCircle,
+  Eye,
+  Layers,
+  DollarSign,
+} from "lucide-react";
 import { useAuthStore } from "../store/useAuthStore";
 import AddSparePartModal from "../components/spareParts/AddSparePartModal";
 import AdjustStockModal from "../components/spareParts/AdjustStockModal";
+import { EditPriceModal } from "../components/spareParts/EditPriceModal";
 
 import { useNavigate } from "react-router-dom";
 
 const SparePartsPage = () => {
   const navigate = useNavigate();
-  const { spareParts, isLoading, refetch } = useSpareParts();
+  const { spareParts, isLoading, refetch, updateSparePart } = useSpareParts();
 
   const user = useAuthStore((state) => state.user);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [selectedPartForStock, setSelectedPartForStock] =
     useState<SparePart | null>(null);
+
+  const [priceModalOpen, setPriceModalOpen] = useState(false);
+  const [selectedPartForPrice, setSelectedPartForPrice] = useState<any | null>(
+    null,
+  );
 
   const canManageCatalog = ["ADMIN", "MANTENIMIENTO", "COMPRAS"].includes(
     user?.role || "",
@@ -25,6 +38,10 @@ const SparePartsPage = () => {
   const handleOpenStockModal = (e: React.MouseEvent, part: SparePart) => {
     e.stopPropagation();
     setSelectedPartForStock(part);
+  };
+
+  const handleUpdatePrice = async (id: string, price: number) => {
+    await updateSparePart(id, { price });
   };
 
   const columns = [
@@ -75,6 +92,21 @@ const SparePartsPage = () => {
               title="Ajustar Stock"
             >
               <Layers size={16} />
+            </button>
+          )}
+
+          {/* Editar Precio */}
+          {canManageCatalog && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                setSelectedPartForPrice(item);
+                setPriceModalOpen(true);
+              }}
+              className="p-1.5 text-green-600 hover:text-green-800 hover:bg-green-100 rounded transition-colors"
+              title="Actualizar Precio"
+            >
+              <DollarSign size={16} />
             </button>
           )}
         </div>
@@ -136,6 +168,16 @@ const SparePartsPage = () => {
         onClose={() => setSelectedPartForStock(null)}
         onSuccess={refetch}
         sparePart={selectedPartForStock}
+      />
+
+      <EditPriceModal
+        isOpen={priceModalOpen}
+        onClose={() => {
+          setPriceModalOpen(false);
+          setSelectedPartForPrice(null);
+        }}
+        sparePart={selectedPartForPrice}
+        onUpdate={handleUpdatePrice}
       />
     </div>
   );

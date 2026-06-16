@@ -10,6 +10,7 @@ import {
   createSparePartRequest,
   getSparePartRequests,
   updateRequestStatus,
+  updateSparePartPrice,
   /*updatePurchaseDetails,*/
 } from "../controllers/sparePart.controller.js";
 import { checkTenant } from "../middlewares/tenant.middleware.js";
@@ -66,6 +67,16 @@ router.post(
   authorize([UserRole.ADMIN, UserRole.COMPRAS, UserRole.MANTENIMIENTO]),
   createSparePart,
 );
+
+/*
+// [ ] Cambiar el precio de un repuesto: PATCH api/spare-parts/catalog/:id/price
+// Roles: Compras, Mantenimiento, Admin
+router.patch(
+  "/catalog/:id/price",
+  authorize([UserRole.ADMIN, UserRole.COMPRAS, UserRole.MANTENIMIENTO]),
+  updateSparePartPrice,
+);
+*/
 
 // [✔] Cambiar algún dato del repuesto: PATCH api/spare-parts/catalog/:id
 // Roles: Compras, Mantenimiento, Admin

@@ -7,6 +7,7 @@ import Issue, { IssueStatus } from "../models/Issue.js";
 import type { AnyArray } from "mongoose";
 import { SparePartService } from "../services/sparePart.service.js";
 import { NotificationService } from "../services/notification.service.js";
+import SparePartProfile from "../models/SparePartProfile.js";
 
 // Asignarle el estado "EN_STOCK" a los pedidos de repuestos más antiguos al reponer el stock
 const allocateVirtualStock = async (
@@ -361,6 +362,38 @@ export const getSparePartRequests = async (req: Request, res: Response) => {
       .json({ message: "Error al obtener la lista de pedidos", error });
   }
 };
+
+/*
+// [ ] Actualizar el precio de un repuesto
+export const updateSparePartPrice = async (
+  req: Request,
+  res: Response,
+): Promise<void> => {
+  try {
+    const { id } = req.params;
+    const { price } = req.body;
+    const companyId = (req as any).companyId;
+
+    if (price === undefined || price < 0) {
+      res.status(400).json({ message: "El precio no es válido" });
+      return;
+    }
+
+    const updatedProfile = await SparePartProfile.findOneAndUpdate(
+      { catalogRef: id as string, company: companyId },
+      { price: Number(price) },
+      { new: true, upsert: true }, // upsert: true crea el perfil si por alguna razón no existía
+    );
+
+    res
+      .status(200)
+      .json({ message: "Precio actualizado", profile: updatedProfile });
+  } catch (error) {
+    res.status(500).json({ message: "Error al actualizar el precio", error });
+  }
+};
+*/
+
 // VIEJAS FUNCIONES
 
 /*
