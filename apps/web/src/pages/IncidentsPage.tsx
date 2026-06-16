@@ -207,12 +207,25 @@ const IncidentsPage = () => {
                       )}
 
                       {inc.status === "En Espera de Repuesto" && (
-                        <button
-                          onClick={() => updateStatus(inc._id, "En Reparación")}
-                          className="px-3 py-2 bg-orange-600 text-white text-[10px] font-bold rounded hover:bg-orange-700 uppercase flex items-center shadow-sm"
-                        >
-                          <Wrench className="w-3 h-3 mr-1" /> Retomar Reparación
-                        </button>
+                        <>
+                          <button
+                            onClick={() => setIncidentForSparePart(inc)}
+                            className="px-3 py-2 bg-amber-500 text-white text-[10px] font-bold rounded hover:bg-amber-600 uppercase flex items-center shadow-sm"
+                          >
+                            <PackageSearch className="w-3 h-3 mr-1" /> Pedir
+                            Repuesto
+                          </button>
+
+                          <button
+                            onClick={() =>
+                              updateStatus(inc._id, "En Reparación")
+                            }
+                            className="px-3 py-2 bg-orange-600 text-white text-[10px] font-bold rounded hover:bg-orange-700 uppercase flex items-center shadow-sm"
+                          >
+                            <Wrench className="w-3 h-3 mr-1" /> Retomar
+                            Reparación
+                          </button>
+                        </>
                       )}
 
                       {inc.status === "En Reparación" && (
