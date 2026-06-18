@@ -100,10 +100,13 @@ export const getGeneralStats = async (
 
 // Función auxiliar para identificar máquinas con más fallas
 async function getCriticalMachines(companyId: any) {
+  // 1. Aseguramos que el ID tenga el formato correcto para MongoDB
+  const realId = companyId._id || companyId;
+
   return await Issue.aggregate([
     {
       $match: {
-        company: companyId,
+        company: new Types.ObjectId(realId), // 2. Casteo estricto para que no falle el filtro
         status: { $ne: "Cerrado" },
       },
     },
@@ -121,8 +124,8 @@ async function getCriticalMachines(companyId: any) {
     { $unwind: "$machineInfo" },
     {
       $project: {
-        name: "$machineInfo.name",
-        code: "$machineInfo.code",
+        // 3. Usamos internalTag en lugar del viejo campo name
+        name: { $ifNull: ["$machineInfo.internalTag", "Máquina sin Tag"] },
         issueCount: "$count",
       },
     },

@@ -6,6 +6,12 @@ import {
   ResponsiveContainer,
   Tooltip,
   Legend,
+  // NUEVAS IMPORTACIONES DE RECHARTS PARA EL GRÁFICO DE BARRAS
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid
 } from "recharts";
 import {
   Tablet,
@@ -14,12 +20,12 @@ import {
   Activity,
   TimerReset,
   BadgeDollarSign,
+  AlertOctagon // Nuevo ícono para la tabla de críticas
 } from "lucide-react";
 
 const Dashboard = () => {
   const { stats, isLoading } = useDashboard();
 
-  const COLORS = ["#22c55e", "#ef4444", "#eab308"]; // Verde, Rojo, Amarillo
   const STATUS_COLORS: Record<string, string> = {
     Operativa: "#22c55e", // Verde
     "En Falla": "#ef4444", // Rojo
@@ -95,7 +101,7 @@ const Dashboard = () => {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Gráfico de Estados */}
+        {/* Gráfico 1: Dona de Estados */}
         <div className="bg-white p-6 rounded-lg border border-gray-200 shadow-sm h-80 flex flex-col">
           <h3 className="text-sm font-bold text-gray-700 uppercase mb-4">
             Estado de la Planta
@@ -124,7 +130,6 @@ const Dashboard = () => {
                 </PieChart>
               </ResponsiveContainer>
             ) : (
-              /* DISEÑO PARA ESTADO VACÍO */
               <div className="text-center space-y-2">
                 <div className="bg-gray-100 p-4 rounded-full inline-block">
                   <Activity className="w-8 h-8 text-gray-300" />
@@ -140,17 +145,45 @@ const Dashboard = () => {
           </div>
         </div>
 
-        {/* Mensaje de Bienvenida / Acción Rápida */}
-        <div className="bg-[#2C2C2C] p-8 rounded-lg shadow-inner flex flex-col justify-center text-white">
-          <h2 className="text-xl font-bold mb-2">Bienvenido al CMMS</h2>
-          <p className="text-gray-400 text-sm mb-6">
-            Monitoreá el estado de tus activos y gestioná las órdenes de trabajo
-            pendientes de forma eficiente.
-          </p>
-          <button className="bg-white text-black px-6 py-2 rounded text-xs font-bold hover:bg-gray-200 transition-colors uppercase tracking-widest self-start">
-            Ver Reportes Detallados
-          </button>
+        {/* Gráfico 2: Top 5 Máquinas Críticas (Reemplaza el div negro) */}
+        <div className="bg-white p-6 rounded-lg border border-gray-200 shadow-sm h-80 flex flex-col">
+          <div className="flex justify-between items-center mb-4">
+            <h3 className="text-sm font-bold text-gray-700 uppercase flex items-center">
+               <AlertOctagon className="w-4 h-4 mr-2 text-red-500"/>
+               Top Máquinas con Fallas Frecuentes
+            </h3>
+          </div>
+          
+          <div className="flex-1 min-h-0 w-full flex items-center justify-center">
+            {stats.criticalMachines && stats.criticalMachines.length > 0 ? (
+              <ResponsiveContainer width="99%" height="99%">
+                <BarChart data={stats.criticalMachines} layout="vertical" margin={{ top: 5, right: 20, left: 20, bottom: 5 }}>
+                  <CartesianGrid strokeDasharray="3 3" horizontal={false} />
+                  <XAxis type="number" allowDecimals={false} />
+                  <YAxis type="category" dataKey="name" width={120} tick={{ fontSize: 11 }} />
+                  <Tooltip 
+                    cursor={{fill: '#f3f4f6'}}
+                    formatter={(value) => [`${value} incidencias`, 'Fallas Reportadas']}
+                  />
+                  <Bar dataKey="issueCount" fill="#ef4444" radius={[0, 4, 4, 0]} barSize={20} />
+                </BarChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="text-center space-y-2">
+                <div className="bg-green-50 p-4 rounded-full inline-block">
+                  <CheckCircle className="w-8 h-8 text-green-400" />
+                </div>
+                <p className="text-gray-400 text-xs font-medium uppercase tracking-wider">
+                  ¡Todo en orden!
+                </p>
+                <p className="text-[10px] text-gray-300 italic">
+                  No hay historial de fallas recurrentes.
+                </p>
+              </div>
+            )}
+          </div>
         </div>
+
       </div>
     </div>
   );
