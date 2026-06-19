@@ -16,6 +16,10 @@ export interface DashboardStats {
   pmp: number;
   availability: number;
   technicianBacklog: { name: string; ticketCount: number }[];
+  overduePreventives: number;
+  pendingSpareParts: number;
+  activeCriticalIssues: number;
+  upcomingPreventives: number;
 }
 
 export const useDashboard = () => {
@@ -32,6 +36,10 @@ export const useDashboard = () => {
     pmp: 100,
     availability: 100,
     technicianBacklog: [],
+    overduePreventives: 0,
+    pendingSpareParts: 0,
+    activeCriticalIssues: 0,
+    upcomingPreventives: 0,
   });
   const [isLoading, setIsLoading] = useState(true);
 

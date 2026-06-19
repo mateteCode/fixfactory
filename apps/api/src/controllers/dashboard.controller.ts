@@ -157,6 +157,29 @@ export const getGeneralStats = async (
       (a, b) => b.ticketCount - a.ticketCount,
     );
 
+    // a. Preventivos Vencidos (Reutilizamos la variable que ya calculaste para el PMP)
+    const overduePreventives = preventivosVencidos;
+
+    // b. Repuestos Pendientes (Todo lo que el técnico pidió pero el pañol aún no le entrega)
+    const pendingSpareParts = await SparePartRequest.countDocuments({
+      company: companyId,
+    });
+
+    // c. Fallas Críticas Activas (Incidencias abiertas de prioridad CRITICA)
+    const activeCriticalIssues = await Issue.countDocuments({
+      company: companyId,
+      status: { $ne: "Cerrado" },
+      priority: { $in: ["Crítica", "Alta"] }, // Agrupamos Alta y Crítica para mayor seguridad
+    });
+
+    // d. Preventivos a Vencer (Próximos 7 días)
+    const sevenDaysFromNow = new Date();
+    sevenDaysFromNow.setDate(sevenDaysFromNow.getDate() + 7);
+    const upcomingPreventives = await PreventiveMaintenance.countDocuments({
+      company: companyId,
+      nextDate: { $lte: sevenDaysFromNow },
+    });
+
     res.status(200).json({
       overview: {
         totalMachines,
@@ -173,6 +196,10 @@ export const getGeneralStats = async (
       totalSpent,
       pmp,
       availability,
+      overduePreventives,
+      pendingSpareParts,
+      activeCriticalIssues,
+      upcomingPreventives,
     });
   } catch (error) {
     res.status(500).json({ message: "Error al generar estadísticas", error });

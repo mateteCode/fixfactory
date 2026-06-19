@@ -6,7 +6,6 @@ import {
   ResponsiveContainer,
   Tooltip,
   Legend,
-  // NUEVAS IMPORTACIONES DE RECHARTS PARA EL GRÁFICO DE BARRAS
   BarChart,
   Bar,
   XAxis,
@@ -25,6 +24,10 @@ import {
   Target,
   Users,
   Zap,
+  CalendarX2,
+  PackageSearch,
+  Siren,
+  CalendarClock,
 } from "lucide-react";
 
 const Dashboard = () => {
@@ -37,42 +40,7 @@ const Dashboard = () => {
   };
 
   const cards = [
-    {
-      label: "Total Máquinas",
-      value: stats.totalMachines,
-      icon: Tablet,
-      color: "text-blue-600",
-    },
-    {
-      label: "Máquinas en Falla",
-      value: stats.machinesInFalla,
-      icon: AlertTriangle,
-      color: "text-red-600",
-    },
-    {
-      label: "Incidencias Abiertas",
-      value: stats.activeIncidents,
-      icon: Activity,
-      color: "text-orange-600",
-    },
-    {
-      label: "Resueltas (Mes)",
-      value: stats.resolvedThisMonth,
-      icon: CheckCircle,
-      color: "text-green-600",
-    },
-    {
-      label: "MTTR (Hs)",
-      value: `${(stats.mttrHours || 0).toLocaleString("es-AR", { minimumFractionDigits: 1 })}`,
-      icon: TimerReset,
-      color: "text-red-600",
-    },
-    {
-      label: "Mantenimiento (USD)",
-      value: `${(stats.totalSpent || 0).toLocaleString("es-AR", { minimumFractionDigits: 0 })}`,
-      icon: BadgeDollarSign,
-      color: "text-red-600",
-    },
+    // Fila 1: Indicadores Globales
     {
       label: "PMP (Cumplimiento)",
       value: `${stats.pmp}%`,
@@ -85,6 +53,71 @@ const Dashboard = () => {
       icon: Zap,
       color: stats.availability >= 95 ? "text-green-600" : "text-amber-500",
     },
+    {
+      label: "Total Máquinas",
+      value: stats.totalMachines,
+      icon: Tablet,
+      color: "text-blue-600",
+    },
+    {
+      label: "Máquinas en Falla",
+      value: stats.machinesInFalla,
+      icon: AlertTriangle,
+      color: "text-red-600",
+    },
+
+    // Fila 2: Tiempos y Dinero
+    {
+      label: "Incidencias Abiertas",
+      value: stats.activeIncidents,
+      icon: Activity,
+      color: "text-orange-600",
+    },
+    {
+      label: "Resueltas (Mes)",
+      value: stats.resolvedThisMonth,
+      icon: CheckCircle,
+      color: "text-emerald-600",
+    },
+    {
+      label: "MTTR Promedio (Hs)",
+      value: `${(stats.mttrHours || 0).toLocaleString("es-AR", { minimumFractionDigits: 1 })}`,
+      icon: TimerReset,
+      color: "text-rose-600",
+    },
+    {
+      label: "Mantenimiento (USD)",
+      value: `$${(stats.totalSpent || 0).toLocaleString("es-AR", { minimumFractionDigits: 0 })}`,
+      icon: BadgeDollarSign,
+      color: "text-cyan-600",
+    },
+
+    // Fila 3: Alertas y Pendientes (¡NUEVAS!)
+    {
+      label: "Preventivos Vencidos",
+      value: stats.overduePreventives,
+      icon: CalendarX2,
+      color: stats.overduePreventives > 0 ? "text-red-600" : "text-gray-400",
+    },
+    {
+      label: "Repuestos Pendientes",
+      value: stats.pendingSpareParts,
+      icon: PackageSearch,
+      color: stats.pendingSpareParts > 0 ? "text-amber-500" : "text-gray-400",
+    },
+    {
+      label: "Fallas Críticas Activas",
+      value: stats.activeCriticalIssues,
+      icon: Siren,
+      color: stats.activeCriticalIssues > 0 ? "text-red-600" : "text-gray-400",
+    },
+    {
+      label: "A Vencer (7 días)",
+      value: stats.upcomingPreventives,
+      icon: CalendarClock,
+      color:
+        stats.upcomingPreventives > 0 ? "text-indigo-600" : "text-gray-400",
+    },
   ];
 
   if (isLoading)
@@ -96,7 +129,7 @@ const Dashboard = () => {
     <div className="space-y-8">
       <h1 className="text-2xl font-bold text-gray-800">Panel de Control</h1>
 
-      {/* Tarjetas superiores - Se adaptan automáticamente a 4 columnas en pantallas grandes */}
+      {/* Renderizado automático de las 12 tarjetas en cuadrícula de 4 */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {cards.map((card, index) => (
           <div
