@@ -1,6 +1,6 @@
 import type { Request, Response } from "express";
 import Issue from "../models/Issue.js";
-import Machine from "../models/Machine.js";
+import Machine, { MachineStatus } from "../models/Machine.js";
 import SparePartRequest from "../models/SparePartRequest.js";
 import { Types } from "mongoose";
 import PreventiveMaintenance from "../models/PreventiveMaintenance.js";
@@ -25,6 +25,11 @@ export const getGeneralStats = async (
     const machinesInFalla = await Machine.countDocuments({
       company: companyId,
       status: "En Falla",
+    });
+
+    const machinesInOperation = await Machine.countDocuments({
+      company: companyId,
+      status: MachineStatus.OPERATIVA,
     });
 
     // Cálculo de MTTR: Tiempo promedio de reparación en horas (TODO: Hacer que cuando se cierre, ponerle closeAt)
@@ -122,7 +127,7 @@ export const getGeneralStats = async (
     // Cálculo de Disponibilidad de Planta
     const availability =
       totalMachines > 0
-        ? Math.round(((totalMachines - machinesInFalla) / totalMachines) * 100)
+        ? Math.round((machinesInOperation / totalMachines) * 100)
         : 100;
 
     // Cálculo de Carga Operativa por Técnico (Backlog)
@@ -163,6 +168,7 @@ export const getGeneralStats = async (
     // b. Repuestos Pendientes (Todo lo que el técnico pidió pero el pañol aún no le entrega)
     const pendingSpareParts = await SparePartRequest.countDocuments({
       company: companyId,
+      status: { $nin: ["Aceptado", "Rechazado"] },
     });
 
     // c. Fallas Críticas Activas (Incidencias abiertas de prioridad CRITICA)

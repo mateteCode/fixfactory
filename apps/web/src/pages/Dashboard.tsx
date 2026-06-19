@@ -290,7 +290,7 @@ const Dashboard = () => {
         <div className="bg-white p-6 rounded-lg border border-gray-200 shadow-sm h-80 flex flex-col">
           <h3 className="text-sm font-bold text-gray-700 uppercase flex items-center mb-4">
             <TrendingUp className="w-4 h-4 mr-2 text-blue-500" />
-            Top Gasto en Mantenimiento
+            Gasto en Mantenimiento
           </h3>
           <div className="flex-1 min-h-0 w-full flex items-center justify-center">
             {stats.topCostMachines && stats.topCostMachines.length > 0 ? (
