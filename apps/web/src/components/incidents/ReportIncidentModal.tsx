@@ -1,5 +1,11 @@
 import React, { useState } from "react";
-import { AlertTriangle, X, Loader2, UploadCloud, Image as ImageIcon } from "lucide-react";
+import {
+  AlertTriangle,
+  X,
+  Loader2,
+  UploadCloud,
+  Image as ImageIcon,
+} from "lucide-react";
 import { useIncidents } from "../../hooks/useIncidents";
 
 interface Props {
@@ -19,7 +25,12 @@ const ReportIncidentModal = ({
 }: Props) => {
   const { createIncident } = useIncidents();
   const [isLoading, setIsLoading] = useState(false);
-  const [imagePreview, setImagePreview] = useState<string | null>(null); // NUEVO: Estado para la imagen
+
+  // Separamos la previsualización del archivo físico y añadimos estado de subida
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [uploadStatus, setUploadStatus] = useState("");
+
   const [formData, setFormData] = useState({
     description: "",
     priority: "Media",
@@ -28,37 +39,71 @@ const ReportIncidentModal = ({
 
   if (!isOpen) return null;
 
-  // NUEVO: Función para convertir la imagen a texto (Base64)
+  // Creamos una URL local súper rápida para visualizar sin convertir a Base64
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setImagePreview(reader.result as string);
-      };
-      reader.readAsDataURL(file);
+      setSelectedFile(file); // Guardamos el archivo original para Cloudinary
+      setImagePreview(URL.createObjectURL(file)); // Creamos una vista previa temporal
     }
+  };
+
+  // Subida a Cloudinary
+  const uploadToCloudinary = async (file: File) => {
+    const data = new FormData();
+    const cloudUrl = import.meta.env.VITE_API_CLOUD_URL;
+    const cloudName = import.meta.env.VITE_API_CLOUD_NAME;
+    const uploadPreset = import.meta.env.VITE_API_CLOUD_UPLOAD_PRESET;
+
+    data.append("file", file);
+    data.append("upload_preset", uploadPreset);
+
+    const response = await fetch(`${cloudUrl}/${cloudName}/auto/upload`, {
+      method: "POST",
+      body: data,
+    });
+
+    if (!response.ok) throw new Error("Error al subir la imagen");
+    const result = await response.json();
+    return result.secure_url;
+  };
+
+  const cleanAndClose = () => {
+    setImagePreview(null);
+    setSelectedFile(null);
+    onClose();
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
+
     try {
-      // Agregamos imageUrl al envío, usando el texto Base64
-      await createIncident({ 
-        ...formData, 
+      let finalImageUrl = "";
+
+      // 1. Si hay una foto seleccionada, la subimos a Cloudinary primero
+      if (selectedFile) {
+        setUploadStatus("Subiendo foto al servidor...");
+        finalImageUrl = await uploadToCloudinary(selectedFile);
+      }
+
+      setUploadStatus("Registrando falla...");
+
+      // 2. Enviamos los datos con la URL limpia al backend
+      await createIncident({
+        ...formData,
         machine: machineId,
-        imageUrl: imagePreview 
+        imageUrl: finalImageUrl || undefined,
       } as any);
-      
+
       onSuccess();
-      setImagePreview(null); // Limpiamos la imagen al cerrar
-      onClose();
+      cleanAndClose();
     } catch (error) {
       console.log(error);
       alert("No se pudo registrar la incidencia.");
     } finally {
       setIsLoading(false);
+      setUploadStatus("");
     }
   };
 
@@ -71,10 +116,7 @@ const ReportIncidentModal = ({
             Reportar Falla: {machineName}
           </h3>
           <button
-            onClick={() => {
-              setImagePreview(null);
-              onClose();
-            }}
+            onClick={cleanAndClose}
             className="text-gray-400 hover:text-gray-600"
           >
             <X size={20} />
@@ -136,7 +178,7 @@ const ReportIncidentModal = ({
             />
           </div>
 
-          {/* NUEVO: Sección para adjuntar imagen */}
+          {/* Sección para adjuntar imagen */}
           <div>
             <label className="block text-[10px] font-bold text-gray-500 uppercase mb-1">
               Evidencia Fotográfica (Opcional)
@@ -145,10 +187,17 @@ const ReportIncidentModal = ({
               <div className="space-y-1 text-center">
                 {imagePreview ? (
                   <div className="relative">
-                    <img src={imagePreview} alt="Preview" className="mx-auto h-32 object-contain rounded" />
-                    <button 
-                      type="button" 
-                      onClick={() => setImagePreview(null)}
+                    <img
+                      src={imagePreview}
+                      alt="Preview"
+                      className="mx-auto h-32 object-contain rounded"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setImagePreview(null);
+                        setSelectedFile(null);
+                      }}
                       className="absolute -top-2 -right-2 bg-red-100 text-red-600 rounded-full p-1 hover:bg-red-200"
                     >
                       <X size={14} />
@@ -160,15 +209,17 @@ const ReportIncidentModal = ({
                     <div className="flex text-sm text-gray-600 justify-center">
                       <label className="relative cursor-pointer bg-white rounded-md font-medium text-red-600 hover:text-red-500 px-1">
                         <span>Sube un archivo</span>
-                        <input 
-                          type="file" 
-                          className="sr-only" 
+                        <input
+                          type="file"
+                          className="sr-only"
                           accept="image/*"
                           onChange={handleImageChange}
                         />
                       </label>
                     </div>
-                    <p className="text-xs text-gray-500">PNG, JPG, GIF hasta 5MB</p>
+                    <p className="text-xs text-gray-500">
+                      PNG, JPG, GIF hasta 5MB
+                    </p>
                   </>
                 )}
               </div>
@@ -181,7 +232,10 @@ const ReportIncidentModal = ({
             className="w-full py-3 bg-red-600 text-white rounded text-xs font-bold hover:bg-red-700 disabled:bg-gray-400 flex items-center justify-center uppercase tracking-widest transition-colors mt-4"
           >
             {isLoading ? (
-              <Loader2 className="w-4 h-4 animate-spin mr-2" />
+              <>
+                <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                {uploadStatus || "Procesando..."}
+              </>
             ) : (
               "ENVIAR REPORTE"
             )}

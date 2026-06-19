@@ -16,6 +16,13 @@ export enum IssuePriority {
   CRITICA = "Crítica",
 }
 
+export enum IssueType {
+  MECANICO = "Mecánico",
+  ELECTRICO = "Eléctrico",
+  SOFTWARE = "Software",
+  OTRO = "Otro",
+}
+
 export interface Diagnostic {
   _id?: string;
   technician: Types.ObjectId;
@@ -33,6 +40,7 @@ export interface Conclusion {
 
 export interface IIssue extends Document {
   machine: Types.ObjectId;
+  type: IssueType;
   description: string; // Descripción del operario del problema
   priority: IssuePriority;
   status: IssueStatus;
@@ -51,6 +59,11 @@ export interface IIssue extends Document {
 const issueSchema = new Schema<IIssue>(
   {
     machine: { type: Schema.Types.ObjectId, ref: "Machine", required: true },
+    type: {
+      type: String,
+      enum: Object.values(IssueType),
+      default: IssueType.OTRO,
+    },
     description: { type: String, required: true },
     priority: {
       type: String,
