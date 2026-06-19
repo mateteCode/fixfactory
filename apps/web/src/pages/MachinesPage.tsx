@@ -5,11 +5,13 @@ import { useMachines, type Machine } from "../hooks/useMachines";
 import { DataTable } from "../components/common/DataTable";
 import { Plus, Settings2, Tablet } from "lucide-react";
 import AddMachineModal from "../components/machines/AddMachineModal";
+import { usePermissions } from "../hooks/usePermissions";
 
 const MachinesPage = () => {
   const navigate = useNavigate();
   const { machines, isLoading, refetch } = useMachines();
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const { canCreateMachine } = usePermissions();
 
   const columns = [
     { header: "TAG", accessor: "internalTag" as keyof Machine },
@@ -55,13 +57,15 @@ const MachinesPage = () => {
         </div>
 
         {/* Acción para abrir modal */}
-        <button
-          onClick={() => setIsModalOpen(true)}
-          className="flex items-center space-x-2 bg-gray-700 text-white px-4 py-2 rounded text-xs font-bold hover:bg-gray-800 transition-all shadow-md"
-        >
-          <Plus size={16} />
-          <span>NUEVA MÁQUINA</span>
-        </button>
+        {canCreateMachine && (
+          <button
+            onClick={() => setIsModalOpen(true)}
+            className="flex items-center space-x-2 bg-gray-700 text-white px-4 py-2 rounded text-xs font-bold hover:bg-gray-800 transition-all shadow-md"
+          >
+            <Plus size={16} />
+            <span>NUEVA MÁQUINA</span>
+          </button>
+        )}
       </div>
 
       {/* Contenedor de Tabla */}

@@ -18,23 +18,39 @@ const router = Router();
 router.use(authenticate);
 router.use(checkTenant);
 
-// Solo el ASISTENTE y el ADMIN pueden gestionar la nómina
-router.get("/", authorize([UserRole.ASISTENTE, UserRole.ADMIN]), getUsers);
+// Solo el ASISTENTE, el GERENTE y el ADMIN pueden gestionar la nómina
+router.get(
+  "/",
+  authorize([
+    UserRole.ASISTENTE,
+    UserRole.ADMIN,
+    UserRole.GERENTE,
+    UserRole.MANTENIMIENTO, // Para listar operarios a quienes asignar la tarea
+  ]),
+  getUsers,
+);
 router.patch(
   "/:id/deactivate",
-  authorize([UserRole.ASISTENTE, UserRole.ADMIN]),
+  authorize([UserRole.ASISTENTE, UserRole.ADMIN, UserRole.GERENTE]),
   deactivateUser,
 );
-router.get("/", authorize([UserRole.ASISTENTE, UserRole.ADMIN]), getUsers);
 router.patch(
   "/:id/activate",
-  authorize([UserRole.ASISTENTE, UserRole.ADMIN]),
+  authorize([UserRole.ASISTENTE, UserRole.ADMIN, UserRole.GERENTE]),
   activateUser,
 );
 router.delete("/:id", authorize([UserRole.ADMIN]), deleteUserPhysical); // El físico solo el ADMIN
 
-router.post("/", authorize([UserRole.ADMIN, UserRole.ASISTENTE]), createUser);
+router.post(
+  "/",
+  authorize([UserRole.ADMIN, UserRole.ASISTENTE], UserRole.GERENTE),
+  createUser,
+);
 
-router.put("/:id", authorize([UserRole.ADMIN, UserRole.ASISTENTE]), updateUser);
+router.put(
+  "/:id",
+  authorize([UserRole.ADMIN, UserRole.ASISTENTE, UserRole.GERENTE]),
+  updateUser,
+);
 
 export default router;

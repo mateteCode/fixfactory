@@ -13,6 +13,7 @@ import { useAuthStore } from "../store/useAuthStore";
 import AddSparePartModal from "../components/spareParts/AddSparePartModal";
 import AdjustStockModal from "../components/spareParts/AdjustStockModal";
 import { EditPriceModal } from "../components/spareParts/EditPriceModal";
+import { usePermissions } from "../hooks/usePermissions";
 
 import { useNavigate } from "react-router-dom";
 
@@ -29,6 +30,7 @@ const SparePartsPage = () => {
   const [selectedPartForPrice, setSelectedPartForPrice] = useState<any | null>(
     null,
   );
+  const { canManageSparePartsInventory } = usePermissions();
 
   const canManageCatalog = ["ADMIN", "MANTENIMIENTO", "COMPRAS"].includes(
     user?.role || "",
@@ -85,7 +87,7 @@ const SparePartsPage = () => {
           </button>
 
           {/* Ajustar stock manualmente */}
-          {canManageCatalog && (
+          {canManageSparePartsInventory && (
             <button
               onClick={(e) => handleOpenStockModal(e, item)}
               className="p-1.5 text-blue-600 hover:text-blue-800 hover:bg-blue-100 rounded transition-colors"
@@ -96,7 +98,7 @@ const SparePartsPage = () => {
           )}
 
           {/* Editar Precio */}
-          {canManageCatalog && (
+          {canManageSparePartsInventory && (
             <button
               onClick={(e) => {
                 e.stopPropagation();

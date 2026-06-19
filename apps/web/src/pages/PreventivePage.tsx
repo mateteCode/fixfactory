@@ -16,6 +16,7 @@ import { AddPreventiveModal } from "../components/preventive/AddPreventiveModal"
 import TaskActionModal from "../components/incidents/TaskActionModal";
 import RequestSparePartModal from "../components/incidents/RequestSparePartModal";
 import { AssignPreventiveModal } from "../components/preventive/AssignPreventiveModal";
+import { usePermissions } from "../hooks/usePermissions";
 
 const PreventivePage = () => {
   const {
@@ -34,6 +35,7 @@ const PreventivePage = () => {
   const [taskToAssign, setTaskToAssign] = useState<string | null>(null);
   const [taskForSparePart, setTaskForSparePart] = useState<any>(null);
   const [actionModal, setActionModal] = useState<{ id: string } | null>(null);
+  const { canSchedulePreventive, canAssignPreventive } = usePermissions();
 
   const canAssignTasks =
     user?.role === "ADMIN" || user?.role === "MANTENIMIENTO";
@@ -73,7 +75,7 @@ const PreventivePage = () => {
               Mis Mantenimientos
             </button>
           </div>
-          {canAssignTasks && (
+          {canSchedulePreventive && (
             <button
               onClick={() => setIsAddModalOpen(true)}
               className="bg-indigo-600 text-white px-4 py-2 rounded-md flex items-center shadow-sm font-bold text-xs uppercase hover:bg-indigo-700"
@@ -141,7 +143,7 @@ const PreventivePage = () => {
                 </div>
 
                 <div className="flex flex-wrap gap-2 justify-end">
-                  {task.status === "Programado" && canAssignTasks && (
+                  {task.status === "Programado" && canAssignPreventive && (
                     <button
                       onClick={() => setTaskToAssign(task._id)}
                       className="px-3 py-2 bg-blue-600 text-white text-[10px] font-bold rounded hover:bg-blue-700 uppercase flex items-center shadow-sm"

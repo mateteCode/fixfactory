@@ -32,7 +32,12 @@ router.get("/:id", getMachineById);
 // Crear una máquina
 router.post(
   "/",
-  authorize([UserRole.ADMIN, UserRole.ASISTENTE, UserRole.MANTENIMIENTO]),
+  authorize([
+    UserRole.ADMIN,
+    UserRole.ASISTENTE,
+    UserRole.MANTENIMIENTO,
+    UserRole.GERENTE,
+  ]),
   createMachine,
 );
 

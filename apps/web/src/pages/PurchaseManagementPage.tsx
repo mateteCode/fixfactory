@@ -11,10 +11,13 @@ import {
   Check,
   X,
 } from "lucide-react";
+import { usePermissions } from "../hooks/usePermissions";
 
 const PurchaseManagementPage = () => {
   const { requests, isLoading, fetchRequests, updateRequestStatus } =
     useSparePartRequests();
+
+  const { canManagePurchases } = usePermissions();
 
   useEffect(() => {
     fetchRequests();
@@ -109,7 +112,7 @@ const PurchaseManagementPage = () => {
       header: "Acciones",
       accessor: (req: any) => (
         <div className="flex items-center space-x-2">
-          {req.status === "Sin Stock" && (
+          {req.status === "Sin Stock" && canManagePurchases && (
             <button
               onClick={() => updateRequestStatus(req._id, "Comprado")}
               className="p-1.5 bg-green-50 text-green-600 rounded border border-green-200 hover:bg-green-100 transition-colors shadow-sm"
@@ -118,26 +121,28 @@ const PurchaseManagementPage = () => {
               <PackageCheck size={16} />
             </button>
           )}
-          {["Solicitado", "En Stock"].includes(req.status) && (
-            <button
-              onClick={() => updateRequestStatus(req._id, "Aceptado")}
-              className="p-1.5 bg-blue-50 text-blue-600 rounded border border-blue-200 hover:bg-blue-100 transition-colors shadow-sm"
-              title="Entregar a Técnico"
-            >
-              <CheckCircle size={16} />
-            </button>
-          )}
-          {["Solicitado", "En Stock"].includes(req.status) && (
-            <button
-              onClick={() => updateRequestStatus(req._id, "Rechazado")}
-              className="p-1.5 bg-red-50 text-red-500 rounded border border-red-200 hover:bg-red-100 transition-colors shadow-sm"
-              title="Rechazar Pedido"
-            >
-              <Ban size={16} />
-            </button>
-          )}
+          {["Solicitado", "En Stock"].includes(req.status) &&
+            canManagePurchases && (
+              <button
+                onClick={() => updateRequestStatus(req._id, "Aceptado")}
+                className="p-1.5 bg-blue-50 text-blue-600 rounded border border-blue-200 hover:bg-blue-100 transition-colors shadow-sm"
+                title="Entregar a Técnico"
+              >
+                <CheckCircle size={16} />
+              </button>
+            )}
+          {["Solicitado", "En Stock"].includes(req.status) &&
+            canManagePurchases && (
+              <button
+                onClick={() => updateRequestStatus(req._id, "Rechazado")}
+                className="p-1.5 bg-red-50 text-red-500 rounded border border-red-200 hover:bg-red-100 transition-colors shadow-sm"
+                title="Rechazar Pedido"
+              >
+                <Ban size={16} />
+              </button>
+            )}
           {/* SI ESTÁ COMPRADO: Botón para indicar que ya llegó físicamente (En Stock) */}
-          {req.status === "Comprado" && (
+          {req.status === "Comprado" && canManagePurchases && (
             <button
               onClick={() => updateRequestStatus(req._id, "En Stock")}
               className="p-1.5 bg-indigo-100 text-indigo-700 rounded hover:bg-indigo-200 shadow-sm transition-colors"

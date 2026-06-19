@@ -15,9 +15,23 @@ import PreventivePage from "./pages/PreventivePage";
 import EmployeePage from "./pages/EmployeePage";
 import ResetPasswordPage from "./pages/ResetPasswordPage";
 import SparePartDetailPage from "./pages/SparePartDetailPage";
+import { usePermissions } from "./hooks/usePermissions";
+import type { JSX } from "react";
+
+const RoleGuard = ({
+  isAllowed,
+  children,
+}: {
+  isAllowed: boolean;
+  children: JSX.Element;
+}) => {
+  const { defaultRoute } = usePermissions();
+  return isAllowed ? children : <Navigate to={defaultRoute} replace />;
+};
 
 function App() {
   const { isAuthenticated } = useAuthStore();
+  const p = usePermissions();
 
   return (
     <BrowserRouter>
@@ -26,7 +40,10 @@ function App() {
         <Route
           path="/"
           element={
-            <Navigate to={isAuthenticated ? "/dashboard" : "/login"} replace />
+            <Navigate
+              to={isAuthenticated ? p.defaultRoute : "/login"}
+              replace
+            />
           }
         />
         {/* Si ya está logueado y entra a /login, lo mandamos al dashboard */}
@@ -36,7 +53,7 @@ function App() {
             !isAuthenticated ? (
               <LoginPage />
             ) : (
-              <Navigate to="/dashboard" replace />
+              <Navigate to={p.defaultRoute} replace />
             )
           }
         />
@@ -46,7 +63,7 @@ function App() {
             !isAuthenticated ? (
               <RegisterPage />
             ) : (
-              <Navigate to="/dashboard" replace />
+              <Navigate to={p.defaultRoute} replace />
             )
           }
         />
@@ -59,28 +76,114 @@ function App() {
           }
         >
           {/* Dashboard */}
-          <Route path="/dashboard" element={<Dashboard />} />
-          {/* NUEVO: Clientes */}
-          <Route path="/clientes" element={<ClientsPage />} />
+          <Route
+            path="/dashboard"
+            element={
+              <RoleGuard isAllowed={p.canViewDashboard}>
+                <Dashboard />
+              </RoleGuard>
+            }
+          />
+
+          {/* Clientes (Lo dejamos solo para ADMIN ya que dijiste de sacarlo) */}
+          <Route
+            path="/clientes"
+            element={
+              <RoleGuard isAllowed={p.isAdmin}>
+                <ClientsPage />
+              </RoleGuard>
+            }
+          />
+
           {/* Gestión de Máquinas */}
-          <Route path="/maquinas" element={<MachinesPage />} />
-          <Route path="/maquinas/:id" element={<MachineDetailPage />} />
-          {/* NUEVO: Historial */}
-          <Route path="/historial" element={<HistoryPage />} />
+          <Route
+            path="/maquinas"
+            element={
+              <RoleGuard isAllowed={p.canViewMachines}>
+                <MachinesPage />
+              </RoleGuard>
+            }
+          />
+          <Route
+            path="/maquinas/:id"
+            element={
+              <RoleGuard isAllowed={p.canViewMachines}>
+                <MachineDetailPage />
+              </RoleGuard>
+            }
+          />
+
+          {/* Historial */}
+          <Route
+            path="/historial"
+            element={
+              <RoleGuard isAllowed={p.canViewHistory}>
+                <HistoryPage />
+              </RoleGuard>
+            }
+          />
+
           {/* Gestión de Incidencias / Órdenes */}
-          <Route path="/ordenes" element={<IncidentsPage />} />
-          {/* NUEVO: Preventivo */}
-          <Route path="/preventivo" element={<PreventivePage />} />
+          <Route
+            path="/ordenes"
+            element={
+              <RoleGuard isAllowed={p.canViewOrders}>
+                <IncidentsPage />
+              </RoleGuard>
+            }
+          />
+
+          {/* Preventivo */}
+          <Route
+            path="/preventivo"
+            element={
+              <RoleGuard isAllowed={p.canViewPreventive}>
+                <PreventivePage />
+              </RoleGuard>
+            }
+          />
+
           {/* Repuestos */}
-          <Route path="/repuestos" element={<SparePartsPage />} />
-          <Route path="/repuestos/:id" element={<SparePartDetailPage />} />
+          <Route
+            path="/repuestos"
+            element={
+              <RoleGuard isAllowed={p.canViewSpareParts}>
+                <SparePartsPage />
+              </RoleGuard>
+            }
+          />
+          <Route
+            path="/repuestos/:id"
+            element={
+              <RoleGuard isAllowed={p.canViewSpareParts}>
+                <SparePartDetailPage />
+              </RoleGuard>
+            }
+          />
 
           {/* Gestión de Compras */}
-          <Route path="/compras" element={<PurchaseManagementPage />} />
-          <Route path="/personal" element={<EmployeePage />} />
+          <Route
+            path="/compras"
+            element={
+              <RoleGuard isAllowed={p.canViewPurchases}>
+                <PurchaseManagementPage />
+              </RoleGuard>
+            }
+          />
+
+          {/* Personal */}
+          <Route
+            path="/personal"
+            element={
+              <RoleGuard isAllowed={p.canViewStaff}>
+                <EmployeePage />
+              </RoleGuard>
+            }
+          />
         </Route>
 
-        <Route path="*" element={<Navigate to="/dashboard" replace />} />
+        {/* Catch-all: Redirección a la ruta default del usuario (Reemplaza al antiguo /dashboard) */}
+        <Route path="*" element={<Navigate to={p.defaultRoute} replace />} />
       </Routes>
     </BrowserRouter>
   );

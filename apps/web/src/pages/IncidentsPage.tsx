@@ -18,6 +18,7 @@ import IncidentDetailModal from "../components/incidents/IncidentDetailModal";
 import AssignIssueModal from "../components/incidents/AssignIssueModal";
 import { useAuthStore } from "../store/useAuthStore";
 import TaskActionModal from "../components/incidents/TaskActionModal";
+import { usePermissions } from "../hooks/usePermissions";
 
 const IncidentsPage = () => {
   const {
@@ -40,6 +41,7 @@ const IncidentsPage = () => {
     issueId: string;
     type: "diagnostic" | "finish";
   } | null>(null);
+  const { canAssignOrder } = usePermissions();
 
   const handleActionSubmit = async (description: string, images: string[]) => {
     if (!actionModal) return;
@@ -51,8 +53,8 @@ const IncidentsPage = () => {
   };
 
   // Privilegios
-  const canAssignTasks =
-    user?.role === "ADMIN" || user?.role === "MANTENIMIENTO";
+  /*const canAssignTasks =
+    user?.role === "ADMIN" || user?.role === "MANTENIMIENTO";*/
 
   const displayedIncidents = filterMyTasks
     ? incidents.filter((i) => i.assignedTo?._id === user?.id)
@@ -159,7 +161,7 @@ const IncidentsPage = () => {
                   </button>
 
                   {/* BOTÓN JEFE: ASIGNAR */}
-                  {inc.status === "Pendiente" && canAssignTasks && (
+                  {inc.status === "Pendiente" && canAssignOrder && (
                     <button
                       onClick={() => setIssueToAssign(inc._id)}
                       className="px-3 py-2 bg-blue-600 text-white text-[10px] font-bold rounded hover:bg-blue-700 uppercase flex items-center shadow-sm"

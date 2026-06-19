@@ -13,15 +13,23 @@ import {
 } from "lucide-react";
 import { useAuthStore } from "../../store/useAuthStore";
 import { useNotificationStore } from "../../store/useNotificationStore";
+import { usePermissions } from "../../hooks/usePermissions";
 
 const Sidebar = () => {
   const user = useAuthStore((state) => state.user);
   const { notifications } = useNotificationStore();
 
-  // Aquí podrías filtrar menuItems basándote en user?.role
-  // Por ejemplo: if (user?.role === 'TECNICO') ...
-
-  // ... resto del componente
+  // Extraemos todos los permisos de páginas
+  const {
+    canViewDashboard,
+    canViewMachines,
+    canViewHistory,
+    canViewOrders,
+    canViewPreventive,
+    canViewSpareParts,
+    canViewPurchases,
+    canViewStaff,
+  } = usePermissions();
 
   // Contamos cuántas notificaciones NO leídas hay de tipo ISSUE
   const issueNotifsCount = notifications.filter(
@@ -32,27 +40,45 @@ const Sidebar = () => {
     (n) => !n.isRead && n.type === "SPARE_PART",
   ).length;
 
-  // Estos ítems coinciden con tu navegación de Supervisor/Admin[cite: 14]
   const menuItems = [
-    { name: "Dashboard", icon: LayoutDashboard, path: "/dashboard" },
-    { name: "Clientes", icon: Users, path: "/clientes" },
-    { name: "Máquinas", icon: Tablet, path: "/maquinas" },
-    { name: "Historial", icon: History, path: "/historial" },
-    {
-      name: "Órdenes",
-      icon: ClipboardList,
-      path: "/ordenes",
-      badge: issueNotifsCount,
-    },
-    { name: "Preventivo", icon: Calendar, path: "/preventivo" },
-    { name: "Repuestos", icon: Package, path: "/repuestos" },
-    {
-      name: "Compras",
-      icon: ShoppingCart,
-      path: "/compras",
-      badge: sparePartNotifsCount,
-    },
-    { name: "Personal", icon: BriefcaseBusiness, path: "/personal" },
+    ...(canViewDashboard
+      ? [{ name: "Dashboard", icon: LayoutDashboard, path: "/dashboard" }]
+      : []),
+    ...(canViewMachines
+      ? [{ name: "Máquinas", icon: Tablet, path: "/maquinas" }]
+      : []),
+    ...(canViewHistory
+      ? [{ name: "Historial", icon: History, path: "/historial" }]
+      : []),
+    ...(canViewOrders
+      ? [
+          {
+            name: "Órdenes",
+            icon: ClipboardList,
+            path: "/ordenes",
+            badge: issueNotifsCount,
+          },
+        ]
+      : []),
+    ...(canViewPreventive
+      ? [{ name: "Preventivo", icon: Calendar, path: "/preventivo" }]
+      : []),
+    ...(canViewSpareParts
+      ? [{ name: "Repuestos", icon: Package, path: "/repuestos" }]
+      : []),
+    ...(canViewPurchases
+      ? [
+          {
+            name: "Compras",
+            icon: ShoppingCart,
+            path: "/compras",
+            badge: sparePartNotifsCount,
+          },
+        ]
+      : []),
+    ...(canViewStaff
+      ? [{ name: "Personal", icon: BriefcaseBusiness, path: "/personal" }]
+      : []),
   ];
 
   return (

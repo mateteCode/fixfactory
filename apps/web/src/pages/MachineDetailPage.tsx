@@ -22,6 +22,7 @@ import {
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import ReportIncidentModal from "../components/incidents/ReportIncidentModal";
+import { usePermissions } from "../hooks/usePermissions";
 
 const MachineDetailPage = () => {
   const { id } = useParams();
@@ -32,6 +33,7 @@ const MachineDetailPage = () => {
 
   const [isIncidentModalOpen, setIsIncidentModalOpen] = useState(false);
   const [activeImage, setActiveImage] = useState<string>("");
+  const { canReportMachineIssue } = usePermissions();
 
   useEffect(() => {
     if (machine) {
@@ -135,12 +137,14 @@ const MachineDetailPage = () => {
         </div>
 
         <div className="flex items-center gap-2 self-start md:self-center">
-          <button
-            onClick={() => setIsIncidentModalOpen(true)}
-            className="flex items-center gap-2 px-4 py-2.5 bg-red-600 text-white rounded text-xs font-bold uppercase tracking-wider hover:bg-red-700 shadow-sm transition-colors"
-          >
-            <AlertTriangle size={14} /> Reportar Falla
-          </button>
+          {canReportMachineIssue && (
+            <button
+              onClick={() => setIsIncidentModalOpen(true)}
+              className="flex items-center gap-2 px-4 py-2.5 bg-red-600 text-white rounded text-xs font-bold uppercase tracking-wider hover:bg-red-700 shadow-sm transition-colors"
+            >
+              <AlertTriangle size={14} /> Reportar Falla
+            </button>
+          )}
         </div>
       </div>
 

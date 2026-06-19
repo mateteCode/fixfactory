@@ -28,8 +28,10 @@ const EmployeePage = () => {
 
   console.log(employees);
 
-  // Solo ADMIN o GERENTE pueden crear empleados
-  const canManageStaff = ["ADMIN", "GERENTE"].includes(user?.role || "");
+  // Solo ADMIN, ASISTENTE o GERENTE pueden crear empleados
+  const canManageStaff = ["ADMIN", "GERENTE", "ASISTENTE"].includes(
+    user?.role || "",
+  );
 
   const handleDeactivate = async (id: string, name: string) => {
     if (
