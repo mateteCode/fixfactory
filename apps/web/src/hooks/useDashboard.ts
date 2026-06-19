@@ -20,6 +20,12 @@ export interface DashboardStats {
   pendingSpareParts: number;
   activeCriticalIssues: number;
   upcomingPreventives: number;
+  mtbfHours: number;
+  avgResponseTimeHours: number;
+  issueTypeData: { name: string; value: number }[];
+  topSpareParts: { name: string; quantity: number }[];
+  preventivesThisMonth: number;
+  avgTaskCost: number;
 }
 
 export const useDashboard = () => {
@@ -40,6 +46,12 @@ export const useDashboard = () => {
     pendingSpareParts: 0,
     activeCriticalIssues: 0,
     upcomingPreventives: 0,
+    mtbfHours: 0,
+    avgResponseTimeHours: 0,
+    issueTypeData: [],
+    topSpareParts: [],
+    preventivesThisMonth: 0,
+    avgTaskCost: 0,
   });
   const [isLoading, setIsLoading] = useState(true);
 

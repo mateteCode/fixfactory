@@ -11,28 +11,22 @@ export const getGeneralStats = async (
 ): Promise<void> => {
   try {
     const companyId = (req as any).companyId;
+    const realId = companyId._id || companyId;
 
-    // Maquinas totales de la empresa
     const totalMachines = await Machine.countDocuments({ company: companyId });
-
-    // Incidentes activos de la empresa
     const activeIncidents = await Issue.countDocuments({
       company: companyId,
       status: { $ne: "Cerrado" },
     });
-
-    // Máquinas con fallas de la empresa (TODO: Cuando se reporta un incidente que se actualice a este estado)
     const machinesInFalla = await Machine.countDocuments({
       company: companyId,
       status: "En Falla",
     });
-
     const machinesInOperation = await Machine.countDocuments({
       company: companyId,
       status: MachineStatus.OPERATIVA,
     });
 
-    // Cálculo de MTTR: Tiempo promedio de reparación en horas (TODO: Hacer que cuando se cierre, ponerle closeAt)
     const closedIssues = await Issue.find({
       company: companyId,
       status: "Cerrado",
@@ -53,8 +47,6 @@ export const getGeneralStats = async (
           )
         : 0;
 
-    // Data para el Gráfico Circular (Agrupación por estado de maquinas)
-    const realId = companyId._id || companyId;
     const statusCounts = await Machine.aggregate([
       { $match: { company: new Types.ObjectId(realId) } },
       { $group: { _id: "$status", value: { $sum: 1 } } },
@@ -65,7 +57,6 @@ export const getGeneralStats = async (
       value: item.value,
     }));
 
-    // Resueltas en el mes (TODO: Asegurar que cuadno se cierra un Issue, se ponga la fecha de closeAt
     const startOfMonth = new Date();
     startOfMonth.setDate(1);
     startOfMonth.setHours(0, 0, 0, 0);
@@ -75,10 +66,20 @@ export const getGeneralStats = async (
       closedAt: { $gte: startOfMonth },
     });
 
-    // 3. Costo Total en Repuestos (RF-10)
+    // --- RECOPILACIÓN DE REPUESTOS ---
     const spareParts = await SparePartRequest.find({
       company: companyId,
-      status: { $in: ["Comprado", "En Stock", "Aceptado"] },
+      status: {
+        $in: [
+          "Comprado",
+          "En Stock",
+          "Aceptado",
+          "COMPRADO",
+          "EN_STOCK",
+          "ACEPTADO",
+          "ENTREGADO",
+        ],
+      },
     })
       .populate({
         path: "issue",
@@ -87,29 +88,44 @@ export const getGeneralStats = async (
       .populate({
         path: "preventive",
         populate: { path: "machine", select: "internalTag" },
-      });
+      })
+      .populate({ path: "sparePart", populate: { path: "catalogRef" } }); // Clave para obtener el nombre
 
     let totalSpent = 0;
     const costMap: Record<string, { name: string; cost: number }> = {};
+    const sparePartsUsage: Record<string, { name: string; quantity: number }> =
+      {};
 
-    spareParts.forEach((sp) => {
-      const cost = (sp.estimatedCost || 0) * sp.quantity;
+    spareParts.forEach((sp: any) => {
+      const quantity = sp.quantity || 1;
+      const cost = (sp.estimatedCost || 0) * quantity;
       totalSpent += cost;
 
-      const machine =
-        (sp as any).issue?.machine || (sp as any).preventive?.machine;
+      // Gastos por Máquina
+      const machine = sp.issue?.machine || sp.preventive?.machine;
       if (machine) {
         const tag = machine.internalTag || "S/T";
         if (!costMap[tag]) costMap[tag] = { name: tag, cost: 0 };
         costMap[tag].cost += cost;
+      }
+
+      // Eficiencia de Stock (Top 3 Repuestos consumidos)
+      if (sp.status === "Aceptado" || sp.status === "ACEPTADO") {
+        const partName = sp.sparePart?.catalogRef?.name || "Repuesto Genérico";
+        if (!sparePartsUsage[partName])
+          sparePartsUsage[partName] = { name: partName, quantity: 0 };
+        sparePartsUsage[partName].quantity += quantity;
       }
     });
 
     const topCostMachines = Object.values(costMap)
       .sort((a, b) => b.cost - a.cost)
       .slice(0, 5);
+    const topSpareParts = Object.values(sparePartsUsage)
+      .sort((a, b) => b.quantity - a.quantity)
+      .slice(0, 5);
 
-    // Cálculo de PMP (Cumplimiento de Preventivo)
+    // --- PMP Y DISPONIBILIDAD ---
     const preventivosRealizados = await PreventiveMaintenance.countDocuments({
       company: companyId,
       status: "Realizado",
@@ -122,15 +138,14 @@ export const getGeneralStats = async (
     const pmp =
       totalPmpBase > 0
         ? Math.round((preventivosRealizados / totalPmpBase) * 100)
-        : 100; // Si no hay tareas, asumimos 100%
+        : 100;
 
-    // Cálculo de Disponibilidad de Planta
     const availability =
       totalMachines > 0
         ? Math.round((machinesInOperation / totalMachines) * 100)
         : 100;
 
-    // Cálculo de Carga Operativa por Técnico (Backlog)
+    // --- BACKLOG ---
     const activeIssuesForTechs = await Issue.find({
       company: companyId,
       status: { $ne: "Cerrado" },
@@ -145,7 +160,6 @@ export const getGeneralStats = async (
 
     const backlogMap: Record<string, { name: string; ticketCount: number }> =
       {};
-
     const processTask = (task: any) => {
       const techName = task.assignedTo?.name;
       if (techName) {
@@ -154,42 +168,88 @@ export const getGeneralStats = async (
         backlogMap[techName].ticketCount += 1;
       }
     };
-
     activeIssuesForTechs.forEach(processTask);
     activePreventivesForTechs.forEach(processTask);
-
     const technicianBacklog = Object.values(backlogMap).sort(
       (a, b) => b.ticketCount - a.ticketCount,
     );
 
-    // a. Preventivos Vencidos (Reutilizamos la variable que ya calculaste para el PMP)
+    // --- ALERTAS INFERIORES ---
     const overduePreventives = preventivosVencidos;
-
-    // b. Repuestos Pendientes (Todo lo que el técnico pidió pero el pañol aún no le entrega)
     const pendingSpareParts = await SparePartRequest.countDocuments({
       company: companyId,
-      status: { $nin: ["Aceptado", "Rechazado"] },
+      status: { $nin: ["Aceptado", "Rechazado", "ACEPTADO", "RECHAZADO"] },
     });
-
-    // c. Fallas Críticas Activas (Incidencias abiertas de prioridad CRITICA)
     const activeCriticalIssues = await Issue.countDocuments({
       company: companyId,
       status: { $ne: "Cerrado" },
-      priority: { $in: ["Crítica", "Alta"] }, // Agrupamos Alta y Crítica para mayor seguridad
+      priority: { $in: ["Crítica", "Alta", "CRITICA", "ALTA"] },
     });
-
-    // d. Preventivos a Vencer (Próximos 7 días)
     const sevenDaysFromNow = new Date();
     sevenDaysFromNow.setDate(sevenDaysFromNow.getDate() + 7);
     const upcomingPreventives = await PreventiveMaintenance.countDocuments({
       company: companyId,
+      status: { $in: ["Programado", "Asignado", "En Proceso"] },
       nextDate: { $lte: sevenDaysFromNow },
     });
 
+    // MTBF (Mean Time Between Failures en horas)
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+    const issuesLast30Days = await Issue.countDocuments({
+      company: companyId,
+      createdAt: { $gte: thirtyDaysAgo },
+    });
+    const totalMachineHours = totalMachines * 30 * 24;
+    const mtbfHours =
+      issuesLast30Days > 0
+        ? (totalMachineHours / issuesLast30Days).toFixed(1)
+        : totalMachineHours;
+
+    // Tiempos de Respuesta (SLA)
+    const issuesWithDiagnostics = await Issue.find({
+      company: companyId,
+      "diagnostics.0": { $exists: true },
+    });
+    let totalResponseMs = 0;
+    issuesWithDiagnostics.forEach((i) => {
+      const diagDate = i.diagnostics[0].createdAt.getTime();
+      const createDate = (i as any).createdAt.getTime();
+      totalResponseMs += diagDate - createDate;
+    });
+    const avgResponseTimeHours =
+      issuesWithDiagnostics.length > 0
+        ? (
+            totalResponseMs /
+            (1000 * 60 * 60) /
+            issuesWithDiagnostics.length
+          ).toFixed(1)
+        : 0;
+
+    // Distribución de Fallas por Tipo
+    const issuesByType = await Issue.aggregate([
+      { $match: { company: new Types.ObjectId(realId) } },
+      { $group: { _id: "$type", value: { $sum: 1 } } },
+    ]);
+    const issueTypeData = issuesByType.map((i) => ({
+      name: i._id || "Otro",
+      value: i.value,
+    }));
+
+    // Preventivos ejecutados este mes
+    const preventivesThisMonth = await PreventiveMaintenance.countDocuments({
+      company: companyId,
+      status: "Realizado",
+      lastDate: { $gte: startOfMonth },
+    });
+
+    // Costo medio por intervención (Fallas + Preventivos terminados)
+    const totalFinishedTasks = closedIssues.length + preventivosRealizados;
+    const avgTaskCost =
+      totalFinishedTasks > 0 ? Math.round(totalSpent / totalFinishedTasks) : 0;
+
     res.status(200).json({
-      overview: {
-        totalMachines,
-      },
+      overview: { totalMachines },
       criticalMachines: await getCriticalMachines(companyId),
       topCostMachines,
       technicianBacklog,
@@ -197,7 +257,7 @@ export const getGeneralStats = async (
       activeIncidents,
       machinesInFalla,
       resolvedThisMonth,
-      machineStatusData, //TODO: Ordenar todo este lio de variables. Chequear con el resto del backend y el dashboard del front
+      machineStatusData,
       mttrHours: Number(mttrHours),
       totalSpent,
       pmp,
@@ -206,6 +266,12 @@ export const getGeneralStats = async (
       pendingSpareParts,
       activeCriticalIssues,
       upcomingPreventives,
+      mtbfHours: Number(mtbfHours),
+      avgResponseTimeHours: Number(avgResponseTimeHours),
+      issueTypeData,
+      topSpareParts,
+      preventivesThisMonth,
+      avgTaskCost,
     });
   } catch (error) {
     res.status(500).json({ message: "Error al generar estadísticas", error });
@@ -214,11 +280,10 @@ export const getGeneralStats = async (
 
 // Función auxiliar para identificar máquinas con más fallas
 async function getCriticalMachines(companyId: any) {
-  // 1. Aseguramos que el ID tenga el formato correcto para MongoDB
   const realId = companyId._id || companyId;
 
   return await Issue.aggregate([
-    { $match: { company: new Types.ObjectId(realId) } }, // ¡Sin excluir las cerradas!
+    { $match: { company: new Types.ObjectId(realId) } },
     { $group: { _id: "$machine", count: { $sum: 1 } } },
     { $sort: { count: -1 } },
     { $limit: 5 },
@@ -234,7 +299,7 @@ async function getCriticalMachines(companyId: any) {
     {
       $project: {
         name: { $ifNull: ["$machineInfo.internalTag", "Sin Tag"] },
-        code: { $ifNull: ["$machineInfo.modelCode", ""] }, // Requerido por tu interfaz TypeScript
+        code: { $ifNull: ["$machineInfo.modelCode", ""] },
         issueCount: "$count",
       },
     },
