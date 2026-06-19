@@ -12,6 +12,7 @@ export enum SparePartStatus {
 export interface ISparePartRequest extends Document {
   issue?: Types.ObjectId; // Incidencia que originó el pedido
   preventive?: Types.ObjectId;
+  machine?: Types.ObjectId;
   sparePart: Types.ObjectId; // Referencia al catálogo de repuestos
   quantity: number; // Cantidad necesaria
   estimatedCost?: number; //Snapshot del costo (congelado al momento de pedir/comprar)
@@ -28,6 +29,7 @@ const sparePartSchema = new Schema<ISparePartRequest>(
       ref: "PreventiveMaintenance",
       required: false,
     },
+    machine: { type: Schema.Types.ObjectId, ref: "Machine", required: false },
     sparePart: {
       type: Schema.Types.ObjectId,
       ref: "SparePart",

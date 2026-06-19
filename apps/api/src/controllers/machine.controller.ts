@@ -153,37 +153,42 @@ export const deleteMachine = async (
   }
 };
 
-//[✔] Obtiene todo el historial de una máquina (No usa un servicio)
+//[ ] Obtiene todo el historial de una máquina (No usa un servicio)
 export const getMachineHistory = async (
   req: Request,
   res: Response,
 ): Promise<void> => {
   try {
     const { id } = req.params;
+    const companyId = (req as any).companyId;
 
-    // Ejecutamos las consultas en paralelo para mejorar el rendimiento
-    const [issues, preventiveTasks, spareParts] = await Promise.all([
-      Issue.find({ machine: id as any }).sort({ createdAt: -1 }),
-      PreventiveMaintenance.find({ machine: id as any }).sort({
+    // Ejecutamos las consultas de incidencias y preventivos de ESTA MÁQUINA y EMPRESA
+    const [issues, preventiveTasks] = await Promise.all([
+      Issue.find({ machine: id, company: companyId }).sort({ createdAt: -1 }),
+      PreventiveMaintenance.find({ machine: id, company: companyId }).sort({
         nextDate: 1,
       }),
-      // Para los repuestos, buscamos los vinculados a las incidencias de esta máquina
-      SparePartRequest.find()
-        .populate({
-          path: "issue",
-          match: { machine: id },
-        })
-        .populate({
-          path: "sparePart",
-          populate: { path: "catalogRef" },
-        }),
     ]);
 
-    // Filtramos los repuestos que efectivamente pertenecen a esta máquina
-    const filteredSpareParts = spareParts.filter((sp) => sp.issue !== null);
+    // Extraemos los IDs de esos tickets
+    const issueIds = issues.map((i) => i._id);
+    const preventiveIds = preventiveTasks.map((p) => p._id);
 
-    // Calculamos el costo total acumulado de la máquina
-    const totalMaintenanceCost = filteredSpareParts.reduce((acc, curr: any) => {
+    // Buscamos los repuestos que coincidan con esos tickets (O que tengan la máquina directamente)
+    const spareParts = await SparePartRequest.find({
+      company: companyId, // <-- Filtro de seguridad principal
+      $or: [
+        { issue: { $in: issueIds } },
+        { preventive: { $in: preventiveIds } },
+        { machine: id }, // Cubre el caso futuro gracias al nuevo campo del esquema
+      ],
+    }).populate({
+      path: "sparePart",
+      populate: { path: "catalogRef" },
+    });
+
+    // Calculamos el costo con la lista purificada (Ya no hace falta hacer un .filter problemático)
+    const totalMaintenanceCost = spareParts.reduce((acc, curr: any) => {
       const unitPrice = curr.estimatedCost || curr.sparePart?.price || 0;
       const quantity = curr.quantity || 1;
       return acc + unitPrice * quantity;
@@ -195,7 +200,7 @@ export const getMachineHistory = async (
       history: {
         issues,
         preventiveTasks,
-        spareParts: filteredSpareParts,
+        spareParts,
       },
     });
   } catch (error) {

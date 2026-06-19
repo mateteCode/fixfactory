@@ -43,7 +43,7 @@ router.delete("/:id", authorize([UserRole.ADMIN]), deleteUserPhysical); // El f√
 
 router.post(
   "/",
-  authorize([UserRole.ADMIN, UserRole.ASISTENTE], UserRole.GERENTE),
+  authorize([UserRole.ADMIN, UserRole.ASISTENTE, UserRole.GERENTE]),
   createUser,
 );
 
