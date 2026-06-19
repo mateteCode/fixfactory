@@ -68,23 +68,47 @@ export const getGeneralStats = async (
       status: "Cerrado",
       closedAt: { $gte: startOfMonth },
     });
-    console.log(resolvedThisMonth);
 
     // 3. Costo Total en Repuestos (RF-10)
     const spareParts = await SparePartRequest.find({
       company: companyId,
       status: { $in: ["Comprado", "En Stock", "Aceptado"] },
+    })
+      .populate({
+        path: "issue",
+        populate: { path: "machine", select: "internalTag" },
+      })
+      .populate({
+        path: "preventive",
+        populate: { path: "machine", select: "internalTag" },
+      });
+
+    let totalSpent = 0;
+    const costMap: Record<string, { name: string; cost: number }> = {};
+
+    spareParts.forEach((sp) => {
+      const cost = (sp.estimatedCost || 0) * sp.quantity;
+      totalSpent += cost;
+
+      const machine =
+        (sp as any).issue?.machine || (sp as any).preventive?.machine;
+      if (machine) {
+        const tag = machine.internalTag || "S/T";
+        if (!costMap[tag]) costMap[tag] = { name: tag, cost: 0 };
+        costMap[tag].cost += cost;
+      }
     });
-    const totalSpent = spareParts.reduce(
-      (acc, curr) => acc + (curr.estimatedCost || 0) * curr.quantity,
-      0,
-    );
+
+    const topCostMachines = Object.values(costMap)
+      .sort((a, b) => b.cost - a.cost)
+      .slice(0, 5);
 
     res.status(200).json({
       overview: {
         totalMachines,
       },
       criticalMachines: await getCriticalMachines(companyId),
+      topCostMachines,
       totalMachines,
       activeIncidents,
       machinesInFalla,
@@ -104,12 +128,7 @@ async function getCriticalMachines(companyId: any) {
   const realId = companyId._id || companyId;
 
   return await Issue.aggregate([
-    {
-      $match: {
-        company: new Types.ObjectId(realId), // 2. Casteo estricto para que no falle el filtro
-        status: { $ne: "Cerrado" },
-      },
-    },
+    { $match: { company: new Types.ObjectId(realId) } }, // ¡Sin excluir las cerradas!
     { $group: { _id: "$machine", count: { $sum: 1 } } },
     { $sort: { count: -1 } },
     { $limit: 5 },
@@ -124,8 +143,8 @@ async function getCriticalMachines(companyId: any) {
     { $unwind: "$machineInfo" },
     {
       $project: {
-        // 3. Usamos internalTag en lugar del viejo campo name
-        name: { $ifNull: ["$machineInfo.internalTag", "Máquina sin Tag"] },
+        name: { $ifNull: ["$machineInfo.internalTag", "Sin Tag"] },
+        code: { $ifNull: ["$machineInfo.modelCode", ""] }, // Requerido por tu interfaz TypeScript
         issueCount: "$count",
       },
     },

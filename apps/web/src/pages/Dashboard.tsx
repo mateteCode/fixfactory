@@ -11,7 +11,7 @@ import {
   Bar,
   XAxis,
   YAxis,
-  CartesianGrid
+  CartesianGrid,
 } from "recharts";
 import {
   Tablet,
@@ -20,7 +20,8 @@ import {
   Activity,
   TimerReset,
   BadgeDollarSign,
-  AlertOctagon // Nuevo ícono para la tabla de críticas
+  AlertOctagon,
+  TrendingUp,
 } from "lucide-react";
 
 const Dashboard = () => {
@@ -100,7 +101,7 @@ const Dashboard = () => {
         ))}
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Gráfico 1: Dona de Estados */}
         <div className="bg-white p-6 rounded-lg border border-gray-200 shadow-sm h-80 flex flex-col">
           <h3 className="text-sm font-bold text-gray-700 uppercase mb-4">
@@ -147,25 +148,39 @@ const Dashboard = () => {
 
         {/* Gráfico 2: Top 5 Máquinas Críticas (Reemplaza el div negro) */}
         <div className="bg-white p-6 rounded-lg border border-gray-200 shadow-sm h-80 flex flex-col">
-          <div className="flex justify-between items-center mb-4">
-            <h3 className="text-sm font-bold text-gray-700 uppercase flex items-center">
-               <AlertOctagon className="w-4 h-4 mr-2 text-red-500"/>
-               Top Máquinas con Fallas Frecuentes
-            </h3>
-          </div>
-          
+          <h3 className="text-sm font-bold text-gray-700 uppercase flex items-center mb-4">
+            <AlertOctagon className="w-4 h-4 mr-2 text-red-500" />
+            Máquinas con Fallas Frecuentes
+          </h3>
           <div className="flex-1 min-h-0 w-full flex items-center justify-center">
             {stats.criticalMachines && stats.criticalMachines.length > 0 ? (
               <ResponsiveContainer width="99%" height="99%">
-                <BarChart data={stats.criticalMachines} layout="vertical" margin={{ top: 5, right: 20, left: 20, bottom: 5 }}>
+                <BarChart
+                  data={stats.criticalMachines}
+                  layout="vertical"
+                  margin={{ top: 5, right: 20, left: 0, bottom: 5 }}
+                >
                   <CartesianGrid strokeDasharray="3 3" horizontal={false} />
                   <XAxis type="number" allowDecimals={false} />
-                  <YAxis type="category" dataKey="name" width={120} tick={{ fontSize: 11 }} />
-                  <Tooltip 
-                    cursor={{fill: '#f3f4f6'}}
-                    formatter={(value) => [`${value} incidencias`, 'Fallas Reportadas']}
+                  <YAxis
+                    type="category"
+                    dataKey="name"
+                    width={80}
+                    tick={{ fontSize: 10 }}
                   />
-                  <Bar dataKey="issueCount" fill="#ef4444" radius={[0, 4, 4, 0]} barSize={20} />
+                  <Tooltip
+                    cursor={{ fill: "#f3f4f6" }}
+                    formatter={(value) => [
+                      `${value} reportes`,
+                      "Historial de Fallas",
+                    ]}
+                  />
+                  <Bar
+                    dataKey="issueCount"
+                    fill="#ef4444"
+                    radius={[0, 4, 4, 0]}
+                    barSize={20}
+                  />
                 </BarChart>
               </ResponsiveContainer>
             ) : (
@@ -176,14 +191,57 @@ const Dashboard = () => {
                 <p className="text-gray-400 text-xs font-medium uppercase tracking-wider">
                   ¡Todo en orden!
                 </p>
-                <p className="text-[10px] text-gray-300 italic">
-                  No hay historial de fallas recurrentes.
-                </p>
               </div>
             )}
           </div>
         </div>
 
+        {/* 3. NUEVO GRÁFICO: Top Máquinas por Gasto */}
+        <div className="bg-white p-6 rounded-lg border border-gray-200 shadow-sm h-80 flex flex-col">
+          <h3 className="text-sm font-bold text-gray-700 uppercase flex items-center mb-4">
+            <TrendingUp className="w-4 h-4 mr-2 text-blue-500" />
+            Gasto en Mantenimiento
+          </h3>
+          <div className="flex-1 min-h-0 w-full flex items-center justify-center">
+            {stats.topCostMachines && stats.topCostMachines.length > 0 ? (
+              <ResponsiveContainer width="99%" height="99%">
+                <BarChart
+                  data={stats.topCostMachines}
+                  layout="vertical"
+                  margin={{ top: 5, right: 20, left: 0, bottom: 5 }}
+                >
+                  <CartesianGrid strokeDasharray="3 3" horizontal={false} />
+                  <XAxis type="number" tickFormatter={(val) => `$${val}`} />
+                  <YAxis
+                    type="category"
+                    dataKey="name"
+                    width={80}
+                    tick={{ fontSize: 10 }}
+                  />
+                  <Tooltip
+                    cursor={{ fill: "#f3f4f6" }}
+                    formatter={(value) => [`$${value}`, "Gasto (USD)"]}
+                  />
+                  <Bar
+                    dataKey="cost"
+                    fill="#3b82f6"
+                    radius={[0, 4, 4, 0]}
+                    barSize={20}
+                  />
+                </BarChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="text-center space-y-2">
+                <div className="bg-blue-50 p-4 rounded-full inline-block">
+                  <BadgeDollarSign className="w-8 h-8 text-blue-400" />
+                </div>
+                <p className="text-gray-400 text-xs font-medium uppercase tracking-wider">
+                  Sin gastos
+                </p>
+              </div>
+            )}
+          </div>
+        </div>
       </div>
     </div>
   );

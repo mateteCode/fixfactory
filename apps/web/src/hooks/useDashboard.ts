@@ -12,6 +12,7 @@ export interface DashboardStats {
   machineStatusData: { name: string; value: number }[];
   // NUEVO: Agregamos el tipado para las máquinas críticas
   criticalMachines: { name: string; code: string; issueCount: number }[];
+  topCostMachines: { name: string; cost: number }[];
 }
 
 export const useDashboard = () => {
@@ -23,7 +24,8 @@ export const useDashboard = () => {
     mttrHours: 0,
     totalSpent: 0,
     machineStatusData: [],
-    criticalMachines: [], // Inicializamos el arreglo vacío
+    criticalMachines: [],
+    topCostMachines: [],
   });
   const [isLoading, setIsLoading] = useState(true);
 
