@@ -3,6 +3,7 @@ import Issue from "../models/Issue.js";
 import Machine from "../models/Machine.js";
 import SparePartRequest from "../models/SparePartRequest.js";
 import { Types } from "mongoose";
+import PreventiveMaintenance from "../models/PreventiveMaintenance.js";
 
 export const getGeneralStats = async (
   req: Request,
@@ -103,12 +104,66 @@ export const getGeneralStats = async (
       .sort((a, b) => b.cost - a.cost)
       .slice(0, 5);
 
+    // Cálculo de PMP (Cumplimiento de Preventivo)
+    const preventivosRealizados = await PreventiveMaintenance.countDocuments({
+      company: companyId,
+      status: "Realizado",
+    });
+    const preventivosVencidos = await PreventiveMaintenance.countDocuments({
+      company: companyId,
+      status: "Vencido",
+    });
+    const totalPmpBase = preventivosRealizados + preventivosVencidos;
+    const pmp =
+      totalPmpBase > 0
+        ? Math.round((preventivosRealizados / totalPmpBase) * 100)
+        : 100; // Si no hay tareas, asumimos 100%
+
+    // Cálculo de Disponibilidad de Planta
+    const availability =
+      totalMachines > 0
+        ? Math.round(((totalMachines - machinesInFalla) / totalMachines) * 100)
+        : 100;
+
+    // Cálculo de Carga Operativa por Técnico (Backlog)
+    const activeIssuesForTechs = await Issue.find({
+      company: companyId,
+      status: { $ne: "Cerrado" },
+      assignedTo: { $exists: true, $ne: null },
+    }).populate("assignedTo", "name");
+
+    const activePreventivesForTechs = await PreventiveMaintenance.find({
+      company: companyId,
+      status: { $in: ["Asignado", "En Proceso"] },
+      assignedTo: { $exists: true, $ne: null },
+    }).populate("assignedTo", "name");
+
+    const backlogMap: Record<string, { name: string; ticketCount: number }> =
+      {};
+
+    const processTask = (task: any) => {
+      const techName = task.assignedTo?.name;
+      if (techName) {
+        if (!backlogMap[techName])
+          backlogMap[techName] = { name: techName, ticketCount: 0 };
+        backlogMap[techName].ticketCount += 1;
+      }
+    };
+
+    activeIssuesForTechs.forEach(processTask);
+    activePreventivesForTechs.forEach(processTask);
+
+    const technicianBacklog = Object.values(backlogMap).sort(
+      (a, b) => b.ticketCount - a.ticketCount,
+    );
+
     res.status(200).json({
       overview: {
         totalMachines,
       },
       criticalMachines: await getCriticalMachines(companyId),
       topCostMachines,
+      technicianBacklog,
       totalMachines,
       activeIncidents,
       machinesInFalla,
@@ -116,6 +171,8 @@ export const getGeneralStats = async (
       machineStatusData, //TODO: Ordenar todo este lio de variables. Chequear con el resto del backend y el dashboard del front
       mttrHours: Number(mttrHours),
       totalSpent,
+      pmp,
+      availability,
     });
   } catch (error) {
     res.status(500).json({ message: "Error al generar estadísticas", error });

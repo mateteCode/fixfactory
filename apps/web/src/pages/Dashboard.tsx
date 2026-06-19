@@ -22,6 +22,9 @@ import {
   BadgeDollarSign,
   AlertOctagon,
   TrendingUp,
+  Target,
+  Users,
+  Zap,
 } from "lucide-react";
 
 const Dashboard = () => {
@@ -70,6 +73,18 @@ const Dashboard = () => {
       icon: BadgeDollarSign,
       color: "text-red-600",
     },
+    {
+      label: "PMP (Cumplimiento)",
+      value: `${stats.pmp}%`,
+      icon: Target,
+      color: stats.pmp >= 90 ? "text-green-600" : "text-amber-500",
+    },
+    {
+      label: "Disponibilidad Planta",
+      value: `${stats.availability}%`,
+      icon: Zap,
+      color: stats.availability >= 95 ? "text-green-600" : "text-amber-500",
+    },
   ];
 
   if (isLoading)
@@ -81,7 +96,7 @@ const Dashboard = () => {
     <div className="space-y-8">
       <h1 className="text-2xl font-bold text-gray-800">Panel de Control</h1>
 
-      {/* Grid de Cards */}
+      {/* Tarjetas superiores - Se adaptan automáticamente a 4 columnas en pantallas grandes */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {cards.map((card, index) => (
           <div
@@ -101,8 +116,9 @@ const Dashboard = () => {
         ))}
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Gráfico 1: Dona de Estados */}
+      {/* Gráficos en grilla de 2 columnas (2x2) */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* 1. Dona de Estados */}
         <div className="bg-white p-6 rounded-lg border border-gray-200 shadow-sm h-80 flex flex-col">
           <h3 className="text-sm font-bold text-gray-700 uppercase mb-4">
             Estado de la Planta
@@ -136,17 +152,14 @@ const Dashboard = () => {
                   <Activity className="w-8 h-8 text-gray-300" />
                 </div>
                 <p className="text-gray-400 text-xs font-medium uppercase tracking-wider">
-                  Sin datos de activos
-                </p>
-                <p className="text-[10px] text-gray-300 italic">
-                  Registrá máquinas para ver su estado
+                  Sin datos
                 </p>
               </div>
             )}
           </div>
         </div>
 
-        {/* Gráfico 2: Top 5 Máquinas Críticas (Reemplaza el div negro) */}
+        {/* 2. Top Máquinas Críticas */}
         <div className="bg-white p-6 rounded-lg border border-gray-200 shadow-sm h-80 flex flex-col">
           <h3 className="text-sm font-bold text-gray-700 uppercase flex items-center mb-4">
             <AlertOctagon className="w-4 h-4 mr-2 text-red-500" />
@@ -170,10 +183,7 @@ const Dashboard = () => {
                   />
                   <Tooltip
                     cursor={{ fill: "#f3f4f6" }}
-                    formatter={(value) => [
-                      `${value} reportes`,
-                      "Historial de Fallas",
-                    ]}
+                    formatter={(value) => [`${value} reportes`, "Historial"]}
                   />
                   <Bar
                     dataKey="issueCount"
@@ -196,11 +206,58 @@ const Dashboard = () => {
           </div>
         </div>
 
-        {/* 3. NUEVO GRÁFICO: Top Máquinas por Gasto */}
+        {/* 4. Carga Operativa por Técnico */}
+        <div className="bg-white p-6 rounded-lg border border-gray-200 shadow-sm h-80 flex flex-col">
+          <h3 className="text-sm font-bold text-gray-700 uppercase flex items-center mb-4">
+            <Users className="w-4 h-4 mr-2 text-indigo-500" />
+            Carga Operativa por Técnico
+          </h3>
+          <div className="flex-1 min-h-0 w-full flex items-center justify-center">
+            {stats.technicianBacklog && stats.technicianBacklog.length > 0 ? (
+              <ResponsiveContainer width="99%" height="99%">
+                <BarChart
+                  data={stats.technicianBacklog}
+                  layout="vertical"
+                  margin={{ top: 5, right: 20, left: 0, bottom: 5 }}
+                >
+                  <CartesianGrid strokeDasharray="3 3" horizontal={false} />
+                  <XAxis type="number" allowDecimals={false} />
+                  <YAxis
+                    type="category"
+                    dataKey="name"
+                    width={90}
+                    tick={{ fontSize: 10 }}
+                  />
+                  <Tooltip
+                    cursor={{ fill: "#f3f4f6" }}
+                    formatter={(value) => [`${value} tickets`, "Asignados"]}
+                  />
+                  <Bar
+                    dataKey="ticketCount"
+                    fill="#6366f1"
+                    radius={[0, 4, 4, 0]}
+                    barSize={20}
+                  />
+                </BarChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="text-center space-y-2">
+                <div className="bg-indigo-50 p-4 rounded-full inline-block">
+                  <CheckCircle className="w-8 h-8 text-indigo-400" />
+                </div>
+                <p className="text-gray-400 text-xs font-medium uppercase tracking-wider">
+                  Sin carga pendiente
+                </p>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* 3. Top Máquinas por Gasto */}
         <div className="bg-white p-6 rounded-lg border border-gray-200 shadow-sm h-80 flex flex-col">
           <h3 className="text-sm font-bold text-gray-700 uppercase flex items-center mb-4">
             <TrendingUp className="w-4 h-4 mr-2 text-blue-500" />
-            Gasto en Mantenimiento
+            Top Gasto en Mantenimiento
           </h3>
           <div className="flex-1 min-h-0 w-full flex items-center justify-center">
             {stats.topCostMachines && stats.topCostMachines.length > 0 ? (
@@ -220,7 +277,7 @@ const Dashboard = () => {
                   />
                   <Tooltip
                     cursor={{ fill: "#f3f4f6" }}
-                    formatter={(value) => [`$${value}`, "Gasto (USD)"]}
+                    formatter={(value) => [`$${value}`, "Costo USD"]}
                   />
                   <Bar
                     dataKey="cost"
