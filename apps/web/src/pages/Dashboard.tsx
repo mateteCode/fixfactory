@@ -71,7 +71,7 @@ const Dashboard = () => {
       color: stats.availability >= 95 ? "text-green-600" : "text-amber-500",
     },
     {
-      label: "PMP (Cumplimiento)",
+      label: "PMP (Cumplimiento de Preventivos)",
       value: `${stats.pmp}%`,
       icon: Target,
       color: stats.pmp >= 90 ? "text-green-600" : "text-amber-500",
@@ -91,13 +91,13 @@ const Dashboard = () => {
       color: "text-emerald-600",
     },
     {
-      label: "Prev. Ejecutados",
+      label: "Preventivos Ejecutados",
       value: stats.preventivesThisMonth,
       icon: ShieldCheck,
       color: "text-indigo-600",
     },
     {
-      label: "SLA Respuesta",
+      label: "SLA (Respuesta a Incidentes)",
       value: `${(stats.avgResponseTimeHours || 0).toLocaleString("es-AR")} hs`,
       icon: Timer,
       color: "text-indigo-600",
@@ -105,7 +105,7 @@ const Dashboard = () => {
 
     // Fila 3: Confiabilidad y Finanzas
     {
-      label: "MTTR Promedio",
+      label: "MTTR (Reparación)",
       value: `${(stats.mttrHours || 0).toLocaleString("es-AR")} hs`,
       icon: TimerReset,
       color: "text-rose-600",
@@ -117,13 +117,13 @@ const Dashboard = () => {
       color: "text-blue-600",
     },
     {
-      label: "Gasto Mantenimiento",
+      label: "Gasto de Mantenimiento",
       value: `$${(stats.totalSpent || 0).toLocaleString("es-AR", { minimumFractionDigits: 0 })}`,
       icon: BadgeDollarSign,
       color: "text-cyan-600",
     },
     {
-      label: "Costo Medio x Tarea",
+      label: "Costo Medio por Tarea",
       value: `$${(stats.avgTaskCost || 0).toLocaleString("es-AR")}`,
       icon: Wallet,
       color: "text-teal-600",
@@ -149,7 +149,7 @@ const Dashboard = () => {
       color: stats.activeCriticalIssues > 0 ? "text-red-600" : "text-gray-400",
     },
     {
-      label: "A Vencer (7 días)",
+      label: "Preventivos a Vencer (7 días)",
       value: stats.upcomingPreventives,
       icon: CalendarClock,
       color:
@@ -238,7 +238,7 @@ const Dashboard = () => {
         {/* Gráfico 2: Origen de Fallas */}
         <div className="bg-white p-5 rounded-lg border border-gray-200 shadow-sm h-72 flex flex-col">
           <h3 className="text-xs font-bold text-gray-700 uppercase mb-2">
-            Distribución de Fallas
+            Distribución de Tipos de Fallas
           </h3>
           <div className="flex-1 min-h-0 w-full flex items-center justify-center">
             {stats.issueTypeData && stats.issueTypeData.length > 0 ? (
@@ -279,7 +279,8 @@ const Dashboard = () => {
         {/* Gráfico 3: Fallas por Máquina */}
         <div className="bg-white p-5 rounded-lg border border-gray-200 shadow-sm h-72 flex flex-col">
           <h3 className="text-xs font-bold text-gray-700 uppercase mb-2 text-red-600 flex items-center">
-            <AlertOctagon className="w-3 h-3 mr-1" /> Fallas Frecuentes
+            <AlertOctagon className="w-3 h-3 mr-1" /> TOP de Máquinas con Fallas
+            Frecuentes
           </h3>
           <div className="flex-1 min-h-0 w-full flex items-center justify-center">
             {stats.criticalMachines && stats.criticalMachines.length > 0 ? (
@@ -324,7 +325,8 @@ const Dashboard = () => {
         {/* Gráfico 4: Costos por Máquina */}
         <div className="bg-white p-5 rounded-lg border border-gray-200 shadow-sm h-72 flex flex-col">
           <h3 className="text-xs font-bold text-gray-700 uppercase mb-2 text-blue-600 flex items-center">
-            <TrendingUp className="w-3 h-3 mr-1" /> Top Gastos
+            <TrendingUp className="w-3 h-3 mr-1" /> TOP de Máquinas con Gastos
+            de Mantenimiento
           </h3>
           <div className="flex-1 min-h-0 w-full flex items-center justify-center">
             {stats.topCostMachines && stats.topCostMachines.length > 0 ? (
@@ -414,7 +416,8 @@ const Dashboard = () => {
         {/* Gráfico 6: Top Repuestos Usados */}
         <div className="bg-white p-5 rounded-lg border border-gray-200 shadow-sm h-72 flex flex-col">
           <h3 className="text-xs font-bold text-gray-700 uppercase mb-2 text-amber-500 flex items-center">
-            <PackageSearch className="w-3 h-3 mr-1" /> Alta Rotación de Stock
+            <PackageSearch className="w-3 h-3 mr-1" /> Rotación de Stock de
+            Repuestos
           </h3>
           <div className="flex-1 min-h-0 w-full flex items-center justify-center">
             {stats.topSpareParts && stats.topSpareParts.length > 0 ? (
