@@ -10,6 +10,9 @@ import userRoutes from "./routes/user.routes.js";
 import companyRoutes from "./routes/company.routes.js";
 import notificationRoutes from "./routes/notification.routes.js";
 
+import { setServers } from "node:dns/promises";
+setServers(["1.1.1.1", "8.8.8.8"]);
+
 const app = express();
 
 //app.use(cors());
