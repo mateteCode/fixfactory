@@ -7,7 +7,10 @@ const MainLayout = () => {
   return (
     <div className="flex h-screen bg-gray-100 overflow-hidden">
       {/* 1. Barra Lateral */}
-      <Sidebar />
+      {/* Nota: el w-24 del wrapper debe coincidir con el ancho del sidebar colapsado para el responsive */}
+      <div className="w-24 relative">
+        <Sidebar />
+      </div>
 
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
         {/* 2. Barra Superior (Header) */}

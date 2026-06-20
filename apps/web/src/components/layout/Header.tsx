@@ -39,16 +39,16 @@ const Header = () => {
   };
 
   return (
-    <header className="h-16 bg-[#F5F5F5] border-b border-gray-300 flex items-center justify-between px-8 shadow-sm relative z-40">
+    <header className="h-16 bg-[#F5F5F5] border-b border-gray-300 flex items-center justify-end px-8 shadow-sm relative z-40">
       {/* Buscador Izquierdo */}
-      <div className="flex-1 max-w-md relative">
+      {/* <div className="flex-1 max-w-md relative">
         <Search className="absolute left-3 top-2.5 text-gray-400 w-4 h-4" />
         <input
           type="text"
           placeholder="Buscar máquina o incidencia..."
           className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded bg-white text-sm focus:outline-none focus:ring-1 focus:ring-gray-400 transition-all"
         />
-      </div>
+      </div> */}
 
       {/* Acciones Derecha */}
       <div className="flex items-center space-x-6">
