@@ -1,5 +1,6 @@
 // src/pages/Dashboard.tsx
 import { useDashboard } from "../hooks/useDashboard";
+import AgendaTodayPanel from "../components/agenda/AgendaTodayPanel";
 import {
   PieChart,
   Pie,
@@ -169,7 +170,7 @@ const Dashboard = () => {
       <h1 className="text-2xl font-bold text-gray-800">
         Panel de Control General
       </h1>
-
+      
       {/* Tarjetas Superiores */}
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
         {cards.map((card, index) => (
@@ -459,6 +460,7 @@ const Dashboard = () => {
           </div>
         </div>
       </div>
+    <AgendaTodayPanel/>
     </div>
   );
 };

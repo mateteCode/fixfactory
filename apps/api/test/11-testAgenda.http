@@ -1,0 +1,39 @@
+### Variables
+@apiUrl = http://localhost:3000/api
+@emailAdmin = matias@motoresarg.com
+@passwordAdmin = password123
+
+
+### LOGIN DEL ADMIN
+# @name loginAdmin
+POST {{apiUrl}}/auth/login
+Content-Type: application/json
+
+{
+    "email": "{{emailAdmin}}",
+    "password": "{{passwordAdmin}}"
+}
+
+
+###
+@token = {{loginAdmin.response.body.$.token}}
+@technicianId = {{loginAdmin.response.body.$.user.id}}
+
+### Agenda del día
+GET {{apiUrl}}/agenda
+Authorization: Bearer {{token}}
+
+### Obtener todas las fallas/incidencias
+GET {{apiUrl}}/issues
+Authorization: Bearer {{token}}
+
+### Asignar fecha de visita a falla de Matías
+PATCH {{apiUrl}}/issues/assign
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+    "issueId": "6a37f0a8330a2d3a08c5f4bc",
+    "technicianId": "69f460e269c610fda7b50fcd",
+    "scheduledAt": "2026-06-21T17:00:00.000Z"
+}

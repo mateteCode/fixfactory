@@ -17,6 +17,7 @@ import ResetPasswordPage from "./pages/ResetPasswordPage";
 import SparePartDetailPage from "./pages/SparePartDetailPage";
 import { usePermissions } from "./hooks/usePermissions";
 import type { JSX } from "react";
+import AgendaPage from "./pages/AgendaPage";
 
 const RoleGuard = ({
   isAllowed,
@@ -170,6 +171,16 @@ function App() {
               </RoleGuard>
             }
           />
+
+        {/* Agenda simple para técnico y operario */}
+        <Route
+          path="/agenda"
+          element={
+            <RoleGuard isAllowed={p.canViewAgenda}>
+              <AgendaPage />
+            </RoleGuard>
+          }
+        />
 
           {/* Personal */}
           <Route

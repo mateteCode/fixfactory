@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import api from "../api/axios";
 import type { IssueStatus } from "../types/Issue";
+import { useQueryClient } from "@tanstack/react-query";
 
 export interface Incident {
   _id: string;
@@ -11,11 +12,13 @@ export interface Incident {
   createdAt: string;
   reportedBy?: { _id: string; name: string; email: string };
   assignedTo?: { _id: string; name: string; email: string };
+  scheduledAt?: string;
 }
 
 export const useIncidentManager = () => {
   const [incidents, setIncidents] = useState<Incident[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const queryClient = useQueryClient();
 
   const fetchIncidents = async () => {
     try {
@@ -34,8 +37,15 @@ export const useIncidentManager = () => {
     fetchIncidents();
   };
 
-  const assignTask = async (issueId: string, technicianId: string) => {
-    await api.patch(`/issues/assign`, { issueId, technicianId });
+  const assignTask = async (issueId: string, technicianId: string, scheduledAt?: string) => {
+    await api.patch(`/issues/assign`, { issueId, technicianId, scheduledAt });
+    await queryClient.invalidateQueries({ queryKey: ["agenda"] });
+    fetchIncidents();
+  };
+
+  const rescheduleVisit = async (issueId: string, scheduledAt: string) => {
+    await api.patch(`/agenda/issues/${issueId}`, { scheduledAt });
+    await queryClient.invalidateQueries({ queryKey: ["agenda"] });
     fetchIncidents();
   };
 
@@ -75,5 +85,6 @@ export const useIncidentManager = () => {
     addDiagnostic,
     finishTask,
     releaseTask,
+    rescheduleVisit,
   };
 };
