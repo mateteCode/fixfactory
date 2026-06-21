@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test';
 
-// Este test arranca usando la sesión por defecto de Matías (Admin)
+// sesión por defecto de Matías (Admin)
 test.use({
   storageState: 'playwright/.auth/user.json'
 });
@@ -36,12 +36,12 @@ test('CP007 - Técnico realiza el diagnóstico de la orden asignada', async ({ p
   // 4. IR A ÓRDENES ASIGNADAS
   await page.getByRole('link', { name: 'Órdenes' }).click();
 
-  // 5. SELECCIONAR LA ORDEN DE LA MÁQUINA (TAB-03)
-  const ordenAsignada = page.getByRole('heading', { name: /TAB-03/i }).or(page.getByText('TAB-03'));
+  // 5. SELECCIONAR LA ORDEN DE LA MÁQUINA (TAB-04)
+  const ordenAsignada = page.getByRole('heading', { name: /TAB-04/i }).or(page.getByText('TAB-04'));
   await expect(ordenAsignada.first()).toBeVisible({ timeout: 5000 });
   await page.getByRole('button', { name: 'Detalle' }).first().click();
   
-  // CORRECCIÓN: Apuntamos al botón (quitamos el /svg del final) para que sea un elemento clickeable válido
+  // Apuntamos al botón para que sea un elemento clickeable válido
   const botonCerrar = page.locator('//*[@id="root"]/div/div[2]/main/div/div/div[3]/div/div[1]/button');
   await botonCerrar.waitFor({ state: 'visible', timeout: 5000 });
   await botonCerrar.click();

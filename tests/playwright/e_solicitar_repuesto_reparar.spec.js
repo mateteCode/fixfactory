@@ -30,8 +30,8 @@ test('CP008 - Flujo completo de reparación: Pedir repuesto, diagnosticar y fina
   // 4. IR A ÓRDENES ASIGNADAS
   await page.getByRole('link', { name: 'Órdenes' }).click();
 
-  // 5. SELECCIONAR LA ORDEN DE LA MÁQUINA (TAB-03) Y VER DETALLE
-  const ordenAsignada = page.getByRole('heading', { name: /TAB-03/i }).or(page.getByText('TAB-03'));
+  // 5. SELECCIONAR LA ORDEN DE LA MÁQUINA (TAB-04) Y VER DETALLE
+  const ordenAsignada = page.getByRole('heading', { name: /TAB-04/i }).or(page.getByText('TAB-04'));
   await expect(ordenAsignada.first()).toBeVisible({ timeout: 5000 });
   await page.getByRole('button', { name: 'Detail' }).or(page.getByRole('button', { name: 'Detalle' })).first().click();
 
@@ -42,9 +42,7 @@ test('CP008 - Flujo completo de reparación: Pedir repuesto, diagnosticar y fina
   const botonCerrarDetalle = page.getByRole('button', { name: /close|cerrar/i }).or(page.locator('button:has(svg)').last());
   await botonCerrarDetalle.click();
 
-  // =================================================================
   // 6. PEDIR REPUESTO (Con la pantalla completamente limpia y despejada)
-  // =================================================================
   const botonRepuesto = page.getByRole('button', { name: /Pedir Repuesto|Solicitar Repuesto/i }).first();
   await botonRepuesto.waitFor({ state: 'visible', timeout: 5000 });
   await botonRepuesto.click();
