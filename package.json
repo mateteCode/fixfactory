@@ -1,0 +1,23 @@
+{
+  "name": "fixfactory",
+  "version": "1.0.0",
+  "description": "> Plataforma web SaaS para la gestión de mantenimiento industrial en PyMEs.",
+  "main": "index.js",
+  "scripts": {},
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ExSixDevs/fixfactory.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/ExSixDevs/fixfactory/issues"
+  },
+  "homepage": "https://github.com/ExSixDevs/fixfactory#readme",
+  "devDependencies": {
+    "@playwright/test": "^1.61.0",
+    "@types/node": "^26.0.0"
+  }
+}
