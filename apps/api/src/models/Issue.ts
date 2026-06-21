@@ -54,6 +54,8 @@ export interface IIssue extends Document {
   repairImagesUrl?: string[]; // URL de las imagenes aportadas por el técnico
   diagnostics: Diagnostic[];
   conclusion?: Conclusion;
+  scheduledAt?: Date; // Asignar fecha y hora de visita tecnica
+  scheduledAtUpdatedAt?: Date;// Actualizacion de fecha y hora de la visita programada
 }
 
 const issueSchema = new Schema<IIssue>(
@@ -87,6 +89,8 @@ const issueSchema = new Schema<IIssue>(
       index: true,
     },
     assignedTo: { type: Schema.Types.ObjectId, ref: "User" },
+    scheduledAt: { type: Date },
+    scheduledAtUpdatedAt: { type: Date },
     repairImagesUrl: [{ type: String }],
     diagnostics: [
       {

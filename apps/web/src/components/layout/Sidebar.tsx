@@ -7,6 +7,7 @@ import {
   Package,
   History,
   Calendar,
+  CalendarClock,
   ShoppingCart,
   BriefcaseBusiness,
   SquareChevronLeft,
@@ -30,6 +31,7 @@ const Sidebar = () => {
     canViewSpareParts,
     canViewPurchases,
     canViewStaff,
+    canViewAgenda,
   } = usePermissions();
 
   const issueNotifsCount = notifications.filter(
@@ -78,6 +80,9 @@ const Sidebar = () => {
     ...(canViewStaff
       ? [{ name: "Personal", icon: BriefcaseBusiness, path: "/personal" }]
       : []),
+    ...(canViewAgenda
+      ? [{ name: "Agenda", icon: CalendarClock, path: "/agenda" }]
+      : []),  
   ];
 
   const [isOpen, setIsOpen] = useState(true);
@@ -88,7 +93,7 @@ const Sidebar = () => {
         isOpen ? "w-64" : "w-24"
       } bg-[#D1D1D1] h-screen flex flex-col border-r border-gray-300 shadow-inner transition-all duration-200 ease-in-out`}
     >
-   
+
       {/* Header / logo */}
       <div className={`border-b border-gray-400 flex items-center justify-center ${isOpen ? "p-6" : "p-2"}`}>
 

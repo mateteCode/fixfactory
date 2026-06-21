@@ -1,0 +1,146 @@
+### Variables
+@apiUrl = http://localhost:3000/api
+@emailAdmin = juanchispita@fosforos.com
+@passwordAdmin = password123
+
+
+### LOGIN DEL ADMIN
+# @name loginAdmin
+POST {{apiUrl}}/auth/login
+Content-Type: application/json
+
+{
+    "email": "{{emailAdmin}}",
+    "password": "{{passwordAdmin}}"
+}
+
+
+###
+@token = {{loginAdmin.response.body.$.token}}
+@technicianId = {{loginAdmin.response.body.$.user.id}}
+
+
+### 1. CREAR UNA MÁQUINA DE PRUEBA
+# @name createMachine
+POST {{apiUrl}}/machines
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+    "brand": "Siemens",
+    "modelCode": "S8-AGENDA-TEST",
+    "name": "Máquina Test Agenda",
+    "technicalSpecs": "Equipo creado para test de agenda",
+    "isPrivate": false,
+    "internalTag": "TEST-AGENDA-01",
+    "status": "Operativa",
+    "location": "Planta 1 - Sector Agenda",
+    "productionLine": "Línea Test",
+    "installationDate": "2026-06-20T00:00:00.000Z",
+    "purchasePrice": 1000,
+    "operationalNotes": "Máquina creada automáticamente para probar agenda"
+}
+
+
+### Ver máquinas existentes
+GET {{apiUrl}}/machines
+Authorization: Bearer {{token}}
+
+###
+@machineId = {{createMachine.response.body.$.machine._id}}
+
+
+### 2. CREAR UNA FALLA DE PRUEBA
+# @name createIssue
+POST {{apiUrl}}/issues
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+    "machine": "{{machineId}}",
+    "description": "Falla de prueba para validar agenda de visita técnica",
+    "priority": "Alta"
+}
+
+
+###
+@issueId = {{createIssue.response.body.$._id}}
+
+
+### 3. VER AGENDA ANTES DE ASIGNAR FECHA
+GET {{apiUrl}}/agenda
+Authorization: Bearer {{token}}
+
+
+### 4. ASIGNAR FALLA SIN FECHA DE VISITA
+### Esto prueba que scheduledAt sea realmente opcional
+PATCH {{apiUrl}}/issues/assign
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+    "issueId": "{{issueId}}",
+    "technicianId": "{{technicianId}}"
+}
+
+
+### 5. VER AGENDA DESPUÉS DE ASIGNAR SIN FECHA
+### La falla NO debería aparecer en agenda porque no tiene scheduledAt
+GET {{apiUrl}}/agenda
+Authorization: Bearer {{token}}
+
+
+### 6. ASIGNAR / ACTUALIZAR FALLA CON FECHA DE VISITA
+PATCH {{apiUrl}}/issues/assign
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+    "issueId": "{{issueId}}",
+    "technicianId": "{{technicianId}}",
+    "scheduledAt": "2026-06-20T14:30:00.000Z"
+}
+
+
+### 7. AGENDA DE UNA FECHA ESPECÍFICA
+### Ahora sí debería aparecer la visita agendada
+GET {{apiUrl}}/agenda?date=2026-06-20
+Authorization: Bearer {{token}}
+
+
+### 8. AGENDA DEL DÍA
+GET {{apiUrl}}/agenda
+Authorization: Bearer {{token}}
+
+
+### 9. REPROGRAMAR VISITA DE UNA FALLA
+PATCH {{apiUrl}}/agenda/issues/{{issueId}}
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+    "scheduledAt": "2026-06-21T15:30:00.000Z"
+}
+
+
+### 10. VER AGENDA DE LA FECHA ORIGINAL
+### Ya no debería aparecer el 2026-06-20 si fue reprogramada
+GET {{apiUrl}}/agenda?date=2026-06-20
+Authorization: Bearer {{token}}
+
+
+### 11. VER AGENDA DE LA NUEVA FECHA
+### Debería aparecer ahora el 2026-06-21
+GET {{apiUrl}}/agenda?date=2026-06-21
+Authorization: Bearer {{token}}
+
+
+### 12. PROBAR FECHA INVÁLIDA
+### Debería devolver 400
+PATCH {{apiUrl}}/agenda/issues/{{issueId}}
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+    "scheduledAt": "fecha-invalida"
+}

@@ -9,6 +9,8 @@ import authRoutes from "./routes/auth.routes.js";
 import userRoutes from "./routes/user.routes.js";
 import companyRoutes from "./routes/company.routes.js";
 import notificationRoutes from "./routes/notification.routes.js";
+import historyRoutes from "./routes/history.routes.js";
+import agendaRoutes from "./routes/agenda.routes.js";
 
 import { setServers } from "node:dns/promises";
 setServers(["1.1.1.1", "8.8.8.8"]);
@@ -42,5 +44,7 @@ app.use("/api/spare-parts", sparePartRoutes);
 app.use("/api/dashboard", dashboardRoutes);
 app.use("/api/company", companyRoutes);
 app.use("/api/notifications", notificationRoutes);
+app.use("/api/history", historyRoutes);
+app.use("/api/agenda", agendaRoutes);
 
 export default app;

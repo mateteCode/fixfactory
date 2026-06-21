@@ -211,14 +211,15 @@ export const closeIssue = async (
   }
 };
 
-// [✔] El jefe de mantenimiento asigna la tarea/repación a un técnico o si mismo
+// [✔] El jefe de mantenimiento asigna la tarea/reparación a un técnico o a sí mismo
 export const assignIssue = async (
   req: Request,
   res: Response,
 ): Promise<void> => {
   try {
-    const { issueId, technicianId } = req.body;
+    const { issueId, technicianId, scheduledAt } = req.body;
     const user = (req as any).user;
+    const companyId = (req as any).companyId;
 
     // Validación de Roles (Solo ADMIN o MANTENIMIENTO)
     if (![UserRole.ADMIN, UserRole.MANTENIMIENTO].includes(user.role)) {
@@ -228,11 +229,28 @@ export const assignIssue = async (
       return;
     }
 
+    const updateData: Record<string, unknown> = {
+      assignedTo: technicianId,
+      status: IssueStatus.EN_PROCESO,
+    };
+
+    if (scheduledAt) {
+      const parsedScheduledAt = new Date(scheduledAt);
+
+      if (Number.isNaN(parsedScheduledAt.getTime())) {
+        res.status(400).json({ message: "Fecha de visita inválida." });
+        return;
+      }
+
+      updateData.scheduledAt = parsedScheduledAt;
+      updateData.scheduledAtUpdatedAt = new Date();
+    }
+
     // Actualizar la incidencia
     const updatedIssue = await Issue.findOneAndUpdate(
-      { _id: issueId, company: (req as any).companyId },
-      { assignedTo: technicianId, status: IssueStatus.EN_PROCESO },
-      { new: true },
+      { _id: issueId, company: companyId },
+      updateData,
+      { new: true, runValidators: true },
     );
 
     if (!updatedIssue) {
@@ -240,25 +258,54 @@ export const assignIssue = async (
       return;
     }
 
+    const visitMessage = updatedIssue.scheduledAt
+      ? `Se te asignó una orden de trabajo con visita programada para el ${updatedIssue.scheduledAt.toLocaleDateString(
+          "es-AR",
+        )} a las ${updatedIssue.scheduledAt.toLocaleTimeString("es-AR", {
+          hour: "2-digit",
+          minute: "2-digit",
+        })}.`
+      : "Se te ha asignado una orden de trabajo. Diagnostica a la brevedad.";
+
     await NotificationService.sendToUser(
       technicianId,
-      (req as any).companyId,
+      companyId,
       {
-        title: "Nueva Tarea Asignada",
-        message:
-          "Se te ha asignado una orden de trabajo. Diagnostica a la brevedad.",
+        title: updatedIssue.scheduledAt
+          ? "Nueva visita técnica asignada"
+          : "Nueva Tarea Asignada",
+        message: visitMessage,
         type: "ISSUE",
-        link: "/ordenes", // Cuando el técnico entre, verá "Mis Tareas"
+        link: "/ordenes",
       },
       ["IN_APP", "EMAIL"],
     );
 
+    if (updatedIssue.scheduledAt && updatedIssue.reportedBy) {
+      await NotificationService.sendToUser(
+        updatedIssue.reportedBy.toString(),
+        companyId,
+        {
+          title: "Visita técnica programada",
+          message: `Un técnico visitará la máquina el ${updatedIssue.scheduledAt.toLocaleDateString(
+            "es-AR",
+          )} a las ${updatedIssue.scheduledAt.toLocaleTimeString("es-AR", {
+            hour: "2-digit",
+            minute: "2-digit",
+          })}.`,
+          type: "ISSUE",
+          link: "/ordenes",
+        },
+        ["IN_APP"],
+      );
+    }
+
     res.status(200).json(updatedIssue);
   } catch (error) {
+    console.error("Error al asignar la tarea:", error);
     res.status(500).json({ message: "Error al asignar la tarea." });
   }
 };
-
 // Agregar Diagnóstico
 export const addDiagnostic = async (req: Request, res: Response) => {
   try {

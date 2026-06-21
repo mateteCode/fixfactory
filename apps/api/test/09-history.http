@@ -1,0 +1,34 @@
+### Variables
+@apiUrl = http://localhost:3000/api
+@emailAdmin = juanchispita@fosforos.com
+@passwordAdmin = password123
+
+### LOGIN DEL ADMIN
+# @name loginAdmin
+POST {{apiUrl}}/auth/login
+Content-Type: application/json
+
+{
+    "email": "{{emailAdmin}}",
+    "password": "{{passwordAdmin}}"
+}
+
+###
+@token = {{loginAdmin.response.body.$.token}}
+
+
+### Historial general de fallas y mantenimiento (RF-02 global)
+GET {{apiUrl}}/history
+Authorization: Bearer {{token}}
+
+### Solo fallas cerradas
+GET {{apiUrl}}/history?type=fallas
+Authorization: Bearer {{token}}
+
+### Solo mantenimiento preventivo realizado
+GET {{apiUrl}}/history?type=mantenimiento
+Authorization: Bearer {{token}}
+
+### Con paginación
+GET {{apiUrl}}/history?type=all&page=1&limit=20
+Authorization: Bearer {{token}}

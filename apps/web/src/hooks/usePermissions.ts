@@ -18,6 +18,12 @@ export const usePermissions = () => {
     return "/maquinas";
   };
 
+    // === Permisos para ver Agenda de Visitas ===
+  const hasExactRole = (allowedRoles: string[]) => {
+    return allowedRoles.includes(role as string);
+  };
+  const canViewAgenda = hasExactRole(["TECNICO", "OPERARIO","MANTENIMIENTO"]);
+
   return {
     role,
     isAdmin: role === "ADMIN",
@@ -32,6 +38,7 @@ export const usePermissions = () => {
       "COMPRAS",
       "GERENTE",
     ]),
+    canViewAgenda,
     canViewHistory: hasRole(["GERENTE", "TECNICO", "MANTENIMIENTO"]),
     canViewOrders: hasRole(["TECNICO", "MANTENIMIENTO"]),
     canViewPreventive: hasRole(["MANTENIMIENTO", "TECNICO"]),
@@ -57,5 +64,9 @@ export const usePermissions = () => {
 
     // Compras
     canManagePurchases: hasRole(["COMPRAS"]), // Botones de aceptar/recibir
+
+    //Reprogramar visita técnica
+    canRescheduleVisit: hasRole(["MANTENIMIENTO", "GERENTE"]),
+
   };
 };

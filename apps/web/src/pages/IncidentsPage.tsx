@@ -3,6 +3,7 @@ import { useIncidentManager } from "../hooks/useIncidentManager";
 import {
   AlertCircle,
   Clock,
+  CalendarClock,
   CheckCircle2,
   Hammer,
   PackageSearch,
@@ -19,6 +20,7 @@ import AssignIssueModal from "../components/incidents/AssignIssueModal";
 import { useAuthStore } from "../store/useAuthStore";
 import TaskActionModal from "../components/incidents/TaskActionModal";
 import { usePermissions } from "../hooks/usePermissions";
+import RescheduleVisitModal from "../components/agenda/RescheduleVisitModal";
 
 const IncidentsPage = () => {
   const {
@@ -30,6 +32,7 @@ const IncidentsPage = () => {
     addDiagnostic,
     finishTask,
     releaseTask,
+    rescheduleVisit,
   } = useIncidentManager();
   const user = useAuthStore((state) => state.user);
 
@@ -42,6 +45,10 @@ const IncidentsPage = () => {
     type: "diagnostic" | "finish";
   } | null>(null);
   const { canAssignOrder } = usePermissions();
+  const [issueToReschedule, setIssueToReschedule] = useState<{
+    id: string;
+    scheduledAt?: string;
+  } | null>(null);
 
   const handleActionSubmit = async (description: string, images: string[]) => {
     if (!actionModal) return;
@@ -104,10 +111,16 @@ const IncidentsPage = () => {
           displayedIncidents.map((inc) => {
             const isMyTask = inc.assignedTo?._id === user?.id;
 
+            const canRescheduleThisVisit =
+              canAssignOrder &&
+              inc.status === "En Proceso" &&
+              !!inc.assignedTo &&
+              !!inc.scheduledAt
+
             return (
               <div
                 key={inc._id}
-                className="bg-white rounded-lg border border-gray-200 shadow-sm p-5 flex flex-col md:flex-row md:items-center justify-between hover:shadow-md transition-shadow gap-4"
+                className="group bg-white rounded-lg border border-gray-200 shadow-sm p-5 flex flex-col md:flex-row md:items-center justify-between hover:shadow-md transition-shadow gap-4"
               >
                 <div className="flex items-start space-x-4">
                   <div
@@ -153,6 +166,23 @@ const IncidentsPage = () => {
                 </div>
 
                 <div className="flex flex-wrap gap-2 justify-end">
+
+                  {/* Botón para reprogramar: solo visitas ya programadas */}
+                  {canRescheduleThisVisit && (
+                    <button
+                      onClick={() =>
+                        setIssueToReschedule({
+                          id: inc._id,
+                          scheduledAt: inc.scheduledAt,
+                        })
+                      }
+                      className="px-3 py-2 bg-sky-600 text-white text-[10px] font-bold rounded hover:bg-sky-700 uppercase flex items-center shadow-sm transition-opacity opacity-0 group-hover:opacity-100 focus:opacity-100"
+                    >
+                      <CalendarClock className="w-3 h-3 mr-1" />
+                      Reprogramar
+                    </button>
+                  )}
+
                   <button
                     onClick={() => setDetailModalId(inc._id)}
                     className="px-3 py-2 bg-gray-100 text-gray-700 border border-gray-300 text-[10px] font-bold rounded hover:bg-gray-200 uppercase flex items-center"
@@ -288,6 +318,22 @@ const IncidentsPage = () => {
         onClose={() => setIssueToAssign(null)}
         issueId={issueToAssign}
         onAssign={assignTask}
+      />
+
+      <RescheduleVisitModal
+        isOpen={!!issueToReschedule}
+        onClose={() => setIssueToReschedule(null)}
+        title={
+          issueToReschedule?.scheduledAt
+            ? "Reprogramar visita"
+            : "Programar visita"
+        }
+        currentScheduledAt={issueToReschedule?.scheduledAt}
+        onSubmit={async (scheduledAt) => {
+          if (issueToReschedule) {
+            await rescheduleVisit(issueToReschedule.id, scheduledAt);
+          }
+        }}
       />
 
       {incidentForSparePart && (

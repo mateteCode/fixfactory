@@ -1,32 +1,53 @@
 import React, { useState } from "react";
 import { X, Loader2, UserCheck } from "lucide-react";
 import { useEmployees } from "../../hooks/useEmployees";
+import { fromDateTimeLocalValue } from "../../hooks/useAgenda";
 
 interface Props {
   isOpen: boolean;
   onClose: () => void;
   issueId: string | null;
-  onAssign: (issueId: string, techId: string) => Promise<void>;
+  onAssign: (
+    issueId: string,
+    techId: string,
+    scheduledAt?: string,
+  ) => Promise<void>;
 }
 
 const AssignIssueModal = ({ isOpen, onClose, issueId, onAssign }: Props) => {
   const { employees, isLoading } = useEmployees();
   const [selectedTech, setSelectedTech] = useState("");
+  const [scheduledAt, setScheduledAt] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   if (!isOpen || !issueId) return null;
 
-  // Filtramos solo el personal calificado para reparar
   const eligibleTechs = employees.filter((emp) =>
     ["TECNICO", "MANTENIMIENTO", "ADMIN"].includes(emp.role),
   );
 
+  const handleClose = () => {
+    setSelectedTech("");
+    setScheduledAt("");
+    onClose();
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
     if (!selectedTech) return;
+
     setIsSubmitting(true);
+
     try {
-      await onAssign(issueId, selectedTech);
+      const formattedScheduledAt = scheduledAt
+        ? fromDateTimeLocalValue(scheduledAt)
+        : undefined;
+
+      await onAssign(issueId, selectedTech, formattedScheduledAt);
+
+      setSelectedTech("");
+      setScheduledAt("");
       onClose();
     } catch (error) {
       alert("Error al asignar tarea");
@@ -43,8 +64,10 @@ const AssignIssueModal = ({ isOpen, onClose, issueId, onAssign }: Props) => {
             <UserCheck className="w-4 h-4 mr-2 text-gray-600" />
             Asignar Trabajo
           </h3>
+
           <button
-            onClick={onClose}
+            type="button"
+            onClick={handleClose}
             className="text-gray-400 hover:text-gray-600"
           >
             <X size={20} />
@@ -57,36 +80,59 @@ const AssignIssueModal = ({ isOpen, onClose, issueId, onAssign }: Props) => {
               Cargando personal...
             </p>
           ) : (
-            <div>
-              <label className="block text-[10px] font-bold text-gray-500 uppercase mb-1">
-                Seleccionar Técnico
-              </label>
-              <select
-                required
-                value={selectedTech}
-                onChange={(e) => setSelectedTech(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded text-sm outline-none focus:border-gray-500"
-              >
-                <option value="" disabled>
-                  -- Elegir personal --
-                </option>
-                {eligibleTechs.map((tech) => (
-                  <option key={tech._id} value={tech._id}>
-                    {tech.name} ({tech.role})
+            <>
+              <div>
+                <label className="block text-[10px] font-bold text-gray-500 uppercase mb-1">
+                  Seleccionar técnico
+                </label>
+
+                <select
+                  required
+                  value={selectedTech}
+                  onChange={(e) => setSelectedTech(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded text-sm outline-none focus:border-gray-500"
+                >
+                  <option value="" disabled>
+                    -- Elegir personal --
                   </option>
-                ))}
-              </select>
-            </div>
+
+                  {eligibleTechs.map((tech) => (
+                    <option key={tech._id} value={tech._id}>
+                      {tech.name} ({tech.role})
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-[10px] font-bold text-gray-500 uppercase mb-1">
+                  Fecha y hora de visita opcional
+                </label>
+
+                <input
+                  type="datetime-local"
+                  value={scheduledAt}
+                  onChange={(e) => setScheduledAt(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded text-sm outline-none focus:border-gray-500"
+                />
+
+                <p className="text-[10px] text-gray-400 mt-1">
+                  Si cargás una fecha y hora, se usará para generar la alerta de
+                  agenda en el dashboard.
+                </p>
+              </div>
+            </>
           )}
 
           <div className="flex space-x-3 pt-4">
             <button
               type="button"
-              onClick={onClose}
+              onClick={handleClose}
               className="flex-1 px-4 py-2 border border-gray-300 text-gray-600 rounded text-xs font-bold uppercase"
             >
               Cancelar
             </button>
+
             <button
               type="submit"
               disabled={isSubmitting || !selectedTech}
@@ -95,7 +141,7 @@ const AssignIssueModal = ({ isOpen, onClose, issueId, onAssign }: Props) => {
               {isSubmitting ? (
                 <Loader2 className="w-4 h-4 animate-spin mx-auto" />
               ) : (
-                "ASIGNAR"
+                "Asignar"
               )}
             </button>
           </div>
