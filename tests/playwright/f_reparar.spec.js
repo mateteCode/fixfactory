@@ -30,17 +30,13 @@ test('CP009 - Continuación de reparación: Retomar orden y finalizar tarea sin 
   // 4. IR A ÓRDENES ASIGNADAS
   await page.getByRole('link', { name: 'Órdenes' }).click();
 
-  // =================================================================
-  // 5. LOCALIZAR LA FILA ESPECÍFICA DE NUESTRA MÁQUINA (TAB-03)
-  // =================================================================
-  // Buscamos el contenedor exacto (fila/tarjeta) que tiene el texto TAB-03
-  const filaOrden = page.locator('div,tr').filter({ hasText: /TAB-03/i }).first();
+  // 5. LOCALIZAR LA FILA ESPECÍFICA DE NUESTRA MÁQUINA (TAB-04)
+  // Buscamos el contenedor exacto (fila/tarjeta) que tiene el texto TAB-04
+  const filaOrden = page.locator('div,tr').filter({ hasText: /TAB-04/i }).first();
   await expect(filaOrden).toBeVisible({ timeout: 5000 });
 
-  // =================================================================
   // 6. MANEJO INTELIGENTE DESDE LA LISTA (SIN ENTRAR A DETALLE)
-  // =================================================================
-  // Acotamos la búsqueda de los botones para que actúen SÓLO dentro de la fila de TAB-03
+  // Acotamos la búsqueda de los botones para que actúen SÓLO dentro de la fila de TAB-04
   const botonRetomar = filaOrden.getByRole('button', { name: /Retomar Reparación|Iniciar Reparación/i }).first();
   
   // Usamos el XPath exacto que me pasaste para el botón de Finalizar
@@ -56,14 +52,12 @@ test('CP009 - Continuación de reparación: Retomar orden y finalizar tarea sin 
     await page.waitForTimeout(1000);
   }
 
-  // =================================================================
   // 7. FINALIZAR Y ESCRIBIR CONCLUSIÓN
-  // =================================================================
   // Esperamos que el botón Finalizar esté listo y visible en la interfaz principal
   await botonFinalizar.waitFor({ state: 'visible', timeout: 5000 });
   await botonFinalizar.click({ force: true }); 
   
-  // SOLUCIÓN EXACTA: Usamos el XPath directo al textarea que me pasaste
+  // Usamos el XPath directo al textarea que me pasaste
   const inputConclusion = page.locator('//*[@id="root"]/div/div[2]/main/div/div/div[3]/div/form/textarea');
   
   // Esperamos 5 segundos a que el modal/formulario termine de abrirse y el textarea sea visible
@@ -77,9 +71,7 @@ test('CP009 - Continuación de reparación: Retomar orden y finalizar tarea sin 
   // Pausa corta antes de enviar el formulario final
   await page.waitForTimeout(500); 
 
-  // =================================================================
-  // 8. CIERRE FINAL DE LA TAREA (Con tu XPath exacto)
-  // =================================================================
+  // 8. CIERRE FINAL DE LA TAREA (Con XPath exacto)
   const botonCerrarTarea = page.locator('//*[@id="root"]/div/div[2]/main/div/div/div[3]/div/form/button');
   await botonCerrarTarea.waitFor({ state: 'visible', timeout: 3000 });
   await botonCerrarTarea.click({ force: true }); // Forzado por si el modal tiene delay de cierre

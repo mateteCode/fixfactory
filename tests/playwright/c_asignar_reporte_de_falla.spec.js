@@ -11,8 +11,8 @@ test('CP006 - Asignar orden de trabajo a un técnico específico', async ({ page
   // Colapsamos el menú para tener mejor espacio de pantalla
   await page.getByRole('button', { name: 'Colapsar menú' }).click();
 
-  // 2. Verificar que la orden de nuestra máquina (TAB-03) está visible en la lista
-  const ordenMaquina = page.getByRole('heading', { name: /TAB-03/i }).or(page.getByText('TAB-03'));
+  // 2. Verificar que la orden de nuestra máquina (TAB-04) está visible en la lista
+  const ordenMaquina = page.getByRole('heading', { name: /TAB-04/i }).or(page.getByText('TAB-04'));
   await expect(ordenMaquina.first()).toBeVisible({ timeout: 5000 });
 
   // 3. Hacer clic en el botón "Detalle" de la primera orden que coincida (la nuestra)
@@ -29,16 +29,14 @@ test('CP006 - Asignar orden de trabajo a un técnico específico', async ({ page
   await botonAccion.waitFor({ state: 'visible' });
   await botonAccion.click();
 
-  // =================================================================
-  // 6. CORRECCIÓN CLAVE: Seleccionar el botón usando .first()
-  // =================================================================
+  // 6. Seleccionar el botón usando .first()
   // Agregamos .first() para evitar el error de duplicidad (strict mode violation)
   const botonAsignar = page.getByRole('button', { name: 'Asignar Trabajo' }).first();
   await botonAsignar.waitFor({ state: 'visible', timeout: 5000 });
   await botonAsignar.click();
 
   // --- MANEJO DE COMBOBOX (Asignación de Técnico) ---
-  // En lugar de usar el ID de Mongo duro que se puede romper, buscamos el campo e interactuamos por texto
+  // buscamos el campo e interactuamos por texto
   await page.getByRole('combobox').click();
   // Tipeamos el nombre del técnico para que React Select lo filtre en la lista
   await page.getByRole('combobox').pressSequentially('Kevin Axel Del Bello', { delay: 100 });

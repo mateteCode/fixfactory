@@ -37,7 +37,7 @@ test('CP004 - Registro exitoso de nueva máquina con manejo de estados de React'
 
   // Código/Tag de la máquina
   await page.getByRole('textbox', { name: 'Ej: TAB-' }).click();
-  await page.getByRole('textbox', { name: 'Ej: TAB-' }).fill('TAB-03');
+  await page.getByRole('textbox', { name: 'Ej: TAB-' }).fill('TAB-04');
 
   // Ubicación
   await page.getByRole('textbox', { name: 'Ej: Línea' }).click();
@@ -65,6 +65,6 @@ test('CP004 - Registro exitoso de nueva máquina con manejo de estados de React'
   await page.getByRole('button', { name: 'Registrar Máquina' }).click();
 
   // 4. VERIFICACIÓN: Esperar que el registro impacte en la UI
-  // Buscamos que aparezca el tag único de la máquina (TAB-03) con margen de 10 segundos
-  await expect(page.getByRole('cell', { name: 'TAB-03' }).or(page.getByText('TAB-03'))).toBeVisible({ timeout: 10000 });
+  // Buscamos que aparezca el tag único de la máquina (TAB-04) con margen de 10 segundos
+  await expect(page.getByRole('cell', { name: 'TAB-04' }).or(page.getByText('TAB-04'))).toBeVisible({ timeout: 10000 });
 });
