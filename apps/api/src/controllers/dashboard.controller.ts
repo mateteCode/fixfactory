@@ -27,6 +27,7 @@ export const getGeneralStats = async (
       status: MachineStatus.OPERATIVA,
     });
 
+    // 1. Buscamos las incidencias cerradas
     const closedIssues = await Issue.find({
       company: companyId,
       status: "Cerrado",
@@ -35,15 +36,19 @@ export const getGeneralStats = async (
 
     let totalRepairTimeMs = 0;
 
-    // 2. Iteramos con una verificación a prueba de fallos
+    // 2. Iteramos asegurando valores numéricos primitivos directos
     closedIssues.forEach((issue) => {
-      const closedAtDate = issue.closedAt;
-      const createdAtDate = (issue as any).createdAt;
+      // Convertimos a Date y extraemos el timestamp numérico de forma totalmente segura
+      const closedTime = issue.closedAt
+        ? new Date(issue.closedAt).getTime()
+        : 0;
+      const createdTime = (issue as any).createdAt
+        ? new Date((issue as any).createdAt).getTime()
+        : 0;
 
-      // Verificación estricta: nos aseguramos de que ambas fechas existan antes de llamar a getTime()
-      if (closedAtDate && createdAtDate) {
-        const duration =
-          new Date(closedAtDate).getTime() - new Date(createdAtDate).getTime();
+      // Solo sumamos si ambos tiempos son válidos y lógicos
+      if (closedTime > 0 && createdTime > 0) {
+        const duration = closedTime - createdTime;
         totalRepairTimeMs += duration;
       }
     });
