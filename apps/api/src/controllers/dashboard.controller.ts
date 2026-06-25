@@ -33,12 +33,10 @@ export const getGeneralStats = async (
       status: "Cerrado",
       closedAt: { $exists: true },
     });
-
     let totalRepairTimeMs = 0;
 
     // 2. Iteramos asegurando valores numéricos primitivos directos
     closedIssues.forEach((issue) => {
-      // Convertimos a Date y extraemos el timestamp numérico de forma totalmente segura
       const closedTime = issue.closedAt
         ? new Date(issue.closedAt).getTime()
         : 0;
@@ -46,7 +44,6 @@ export const getGeneralStats = async (
         ? new Date((issue as any).createdAt).getTime()
         : 0;
 
-      // Solo sumamos si ambos tiempos son válidos y lógicos
       if (closedTime > 0 && createdTime > 0) {
         const duration = closedTime - createdTime;
         totalRepairTimeMs += duration;
@@ -225,11 +222,22 @@ export const getGeneralStats = async (
       "diagnostics.0": { $exists: true },
     });
     let totalResponseMs = 0;
+
     issuesWithDiagnostics.forEach((i) => {
-      const diagDate = i.diagnostics[0].createdAt.getTime();
-      const createDate = (i as any).createdAt.getTime();
-      totalResponseMs += diagDate - createDate;
+      // Extraemos los tiempos validando estrictamente su existencia mediante ternarios
+      const diagDate =
+        i.diagnostics && i.diagnostics[0] && i.diagnostics[0].createdAt
+          ? new Date(i.diagnostics[0].createdAt).getTime()
+          : 0;
+      const createDate = (i as any).createdAt
+        ? new Date((i as any).createdAt).getTime()
+        : 0;
+
+      if (diagDate > 0 && createDate > 0) {
+        totalResponseMs += diagDate - createDate;
+      }
     });
+
     const avgResponseTimeHours =
       issuesWithDiagnostics.length > 0
         ? (
