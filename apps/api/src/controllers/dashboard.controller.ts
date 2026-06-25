@@ -34,11 +34,16 @@ export const getGeneralStats = async (
     });
 
     let totalRepairTimeMs = 0;
+
+    // 2. Iteramos con una verificación a prueba de fallos
     closedIssues.forEach((issue) => {
-      if (issue.closedAt && (issue as any).createdAt) {
+      const closedAtDate = issue.closedAt;
+      const createdAtDate = (issue as any).createdAt;
+
+      // Verificación estricta: nos aseguramos de que ambas fechas existan antes de llamar a getTime()
+      if (closedAtDate && createdAtDate) {
         const duration =
-          issue.closedAt.getTime() -
-          new Date((issue as any).createdAt).getTime();
+          new Date(closedAtDate).getTime() - new Date(createdAtDate).getTime();
         totalRepairTimeMs += duration;
       }
     });
