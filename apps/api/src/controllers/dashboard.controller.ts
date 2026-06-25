@@ -35,9 +35,12 @@ export const getGeneralStats = async (
 
     let totalRepairTimeMs = 0;
     closedIssues.forEach((issue) => {
-      const duration =
-        issue.closedAt!.getTime() - (issue as any).createdAt.getTime();
-      totalRepairTimeMs += duration;
+      if (issue.closedAt && (issue as any).createdAt) {
+        const duration =
+          issue.closedAt.getTime() -
+          new Date((issue as any).createdAt).getTime();
+        totalRepairTimeMs += duration;
+      }
     });
 
     const mttrHours =

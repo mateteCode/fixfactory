@@ -159,7 +159,7 @@ export const getMachineHistory = async (
   res: Response,
 ): Promise<void> => {
   try {
-    const { id } = req.params;
+    const id = req.params.id as string;
     const companyId = (req as any).companyId;
 
     // Ejecutamos las consultas de incidencias y preventivos de ESTA MÁQUINA y EMPRESA

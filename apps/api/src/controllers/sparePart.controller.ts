@@ -326,12 +326,13 @@ export const updateRequestStatus = async (req: Request, res: Response) => {
 
     // Verificar si todos los repuestos del Issue están resueltos
     if (
-      status === SparePartStatus.ACEPTADO ||
-      status === SparePartStatus.RECHAZADO
+      (status === SparePartStatus.ACEPTADO ||
+        status === SparePartStatus.RECHAZADO) &&
+      request.issue // <--- AGREGA ESTA COMPROBACIÓN AQUÍ
     ) {
       // Contamos cuántos repuestos de esta incidencia NO están Aceptados ni Rechazados
       const pendingParts = await SparePartRequest.countDocuments({
-        issue: request.issue,
+        issue: request.issue, // Ahora TypeScript sabe al 100% que no es undefined
         company: companyId,
         status: { $nin: [SparePartStatus.ACEPTADO, SparePartStatus.RECHAZADO] },
       });
